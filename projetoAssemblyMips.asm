@@ -4,6 +4,8 @@
 
 j main
 
+
+
 buscar: #recebe no registrador $a0 o primeiro endereço da estrutura 
 	#recebe no registrador $a1 o numero do apartamento a ser encontrado
 	#caso não seja encontrado, ele retorna a posição do apartamento de número zero (exceção)
@@ -93,11 +95,11 @@ formatar: #recebe no registrador $a0 o primeiro endereço da estrutura e torna to
 				addi $sp, $sp, -24 #reserva espaço no stack pointer para armazenar o endereço de retorno no $ra e preservar as variaveis da função
 		
 				sw $ra, 0($sp) #no espaço reservado armazena o valor de retorno desta função
-				sw $a0, 4($s0) #armazena o parâmentro da função em $a0 para que ele seja preservado durante a chamada de outra função
-				sw $t0, 8($s0) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra função
-				sw $t1, 12($s0) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra função
-				sw $t2, 16($s0) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra função
-				sw $t3, 20($s0) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra função
+				sw $a0, 4($sp) #armazena o parâmentro da função em $a0 para que ele seja preservado durante a chamada de outra função
+				sw $t0, 8($sp) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra função
+				sw $t1, 12($sp) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra função
+				sw $t2, 16($sp) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra função
+				sw $t3, 20($sp) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra função
 			
 
 				addi $a0, $a0, 0 #passa como parâmetro para a próxima função o primeiro endereço da estrutura
@@ -105,11 +107,11 @@ formatar: #recebe no registrador $a0 o primeiro endereço da estrutura e torna to
 				jal limpar #vai para a função limpar e o endereço da próxima instrução é armzenado em $ra
 		
 				lw $ra, 0($sp) #recupera o valor de retorno desta função em $ra
-				lw $a0, 4($s0) #recupera o parâmentro da função em $a0 que foi preservado durante a chamada de outra função
-				lw $t0, 8($s0) #recupera o valor de $t0 que foi preservado durante a chamada de outra função
-				lw $t1, 12($s0) #recupera o valor de $t0 que foi preservado durante a chamada de outra função
-				lw $t2, 16($s0) #recupera o valor de $t0 que foi preservado durante a chamada de outra função
-				lw $t3, 20($s0) #recupera o valor de $t0 que foi preservado durante a chamada de outra função
+				lw $a0, 4($sp) #recupera o parâmentro da função em $a0 que foi preservado durante a chamada de outra função
+				lw $t0, 8($sp) #recupera o valor de $t0 que foi preservado durante a chamada de outra função
+				lw $t1, 12($sp) #recupera o valor de $t0 que foi preservado durante a chamada de outra função
+				lw $t2, 16($sp) #recupera o valor de $t0 que foi preservado durante a chamada de outra função
+				lw $t3, 20($sp) #recupera o valor de $t0 que foi preservado durante a chamada de outra função
 			
 		
 				addi $sp, $sp, 24 #libera espaço no stack pointer
