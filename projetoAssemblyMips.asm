@@ -5,6 +5,34 @@
 j main
 
 
+strcpy: #recebe em $a0 e em $a1 os endereços para a cópia de uma string com origem em $a1 e destino em $a0
+	 #retorna em $v0 o endereço da string de destino
+
+	add $t0, $a0, $0 #registra o endereço de $a0 em $t0 (destino)
+	add $t1, $a1, $0 #registra o endereço de $a1 em $t1 (origem)
+	add $t2, $0, $0  #o registrador $t2 é responsável por auxiliar a operação
+	
+	continuarStrcpy:
+		
+		lb $t2, 0($t1) #carrega em $t2 o caractere no endereço em $t1
+		
+		beq $t2, $0, finalizarStrcpy #se na posição atual da string de origem não existir o caractere nulo
+					        #então continue a operação 
+					        #senão finalize a função
+			sb $t2, 0($t0)       #carrega no endereço atual da string de destino o caractere atual da string de origem
+			
+			addi $t0, $t0, 1     #incrementa o endereço registrado em $t0
+			addi $t1, $t1, 1     #incrementa o endereço registrado em $t1
+			
+			j continuarStrcpy    #mantêm a repetição da função
+	
+	finalizarStrcpy:
+
+		sb $t2, 0($t0)               #carrega o valor nulo encontrado na string de origem na string destino
+		add $v0, $a0, $0             #carrega o endereço da string de destino em $a0 em $v0 (retorno)
+		jr $ra                       #volta para a main
+
+
 
 buscar: #recebe no registrador $a0 o primeiro endereço da estrutura 
 	#recebe no registrador $a1 o numero do apartamento a ser encontrado
