@@ -1,6 +1,11 @@
 .data
 
-minhaEstrutura: .space 13042
+nome1: .asciiz "Luiz"
+nome2: .asciiz "Eloisa"
+nome3: .asciiz "Henrique"
+nome4: .asciiz "Marconi"
+nome5: .asciiz "Vera"
+nome6: .asciiz "Paulo"
 
 .text
 
@@ -38,14 +43,251 @@ strncpy: #recebe em $a0 e em $a1 os endere�os para a c�pia de uma string com
 		jr $ra                      #volta para a main
 
 
-adicionarMorador: #registra em $a0 o endereço do apartamento em que deve ser adicionado
-		    #registra em $a1 o endereço do nome do morador a ser adicionado
+strcmp: #recebe em $a0 e $a1 os endere�os para a compara��o de strings
+	#retorna um inteiro em $v0 que quando � zero indica que as strings s�o iguais
+
+	add $t0, $a0, $0 #carrega em $t0 o endere�o da primeira string
+	add $t1, $a1, $0 #carrega em $t1 o endere�o da segunda string
+	add $t2, $0, $0  #registrador $t2 auxilia a execu��o da fun��o
+	add $t3, $0, $0  #registrador $t3 auxilia a execu��o da fun��o
+	add $t4, $0, $0  #registrador $t4 auxilia a execu��o da fun��o
+	
+	continuarStrcmp:
+	
+		lb $t2, 0($t0)    #carrega o caractere no endere�o em $t0 em $t2
+		lb $t3, 0($t1)    #carrega o caractere no endere�o em $t1 em $t3
+		
+		sub $t4, $t2, $t3 #compara os caracteres de $t2 e $t3 por subtra��o
+		
+		bne $t4, $0, finalizarStrcmp #se a compara��o for diferente de zero 
+					     #ent�o finalize a fun��o
+					     #sen�o fa�a a pr�xima verifica��o
+					     
+		beq $t2, $0, finalizarStrcmp #se a compara��o for igual a zero e um dos caracteres � nulo 
+					     #ent�o finalize a fun��o
+					     #sen�o incremente a posi��o das strings
+		
+			addi $t0, $t0, 1     #incrementa o endere�o em $t0
+			addi $t1, $t1, 1     #incrementa o endere�o em $t1
+			
+			j continuarStrcmp    #mant�m a repeti��o da fun��o
+		
+	finalizarStrcmp:
+	
+		add $v0, $t4, $0  	     #carrega o valor da compara��o em $v0 (retorno)
+		jr $ra           	     #volta para a main
+	
+
+
+adicionarAutomovel: #recebe em $a0 o numero do apartamento
+		      #recebe em $a1 o endereço do tipo do veiculo
+		      #recebe em $a2 o endereço do modelo do veiculo
+		      #recebe em $a3 o endereço da cor do veiculo
+		      
+	#início da chamada da função buscar
+		addi $sp, $sp, -12
+		sw $ra, 0($sp)
+		sw $a0, 4($sp)
+		sw $a1, 8($sp)
+	
+		add $a0, $a0, $0 #carrega em $a0 o número do apartamento a ser encontrado
+		jal buscar       #retorna em $v0 o endereço do apartamento com este número
+	
+		lw $ra, 0($sp)
+		lw $a0, 4($sp)
+		lw $a1, 8($sp)	  
+		addi $sp, $sp, 12
+	#final da chamada da função buscar
+	
+	add $t0, $v0, $0 #registra em $t0 o endereço do apartamento
+	add $t1, $a1, $0 #registra em $t1 o endereço do tipo do veiculo
+	add $t2, $a2, $0 #registra em $t2 o endereço do modelo do veiculo
+	add $t3, $a3, $0 #registra em $t3 o endereço da cor do veiculo
+	lb  $t4, 2($t0)  #carrega em $t4 o número atual de carros no apartamento
+	lb  $t5, 3($t0)  #carrega em $t5 o numero atual de motos no apartamento
+	lb  $t6, 4($t0)  #carrega em $t6 o numero atual de veiculos no apartamento
+	add $t7, 260($t0)#registra em $t7 o endereço da lista de veiculos
+	add $t8, $0, $0  #registrador $t8 será auxiliar para o funcionamento da função
+	add $t9, $0, $0  #registrador $t9 será auxiliar para o funcionamento da função
+	
+	beq $t2, 1, finalizarAdicionarAutomovel
+		beq $t3, 2, finalizarAdicionarAutomovel
+			lb $t8, 0($t1)
+			
+			beq $t8, 99, adicionarCarro
+				beq $t5, 1, adicionarMotoPosicao2
+					addi $sp, $sp, -60
+					sw $ra, 0($sp)
+					sw $a0, 4($sp)
+					sw $a1, 8($sp)
+					sw $a2, 12($sp)
+					sw $a3, 16($sp)
+					sw $t0, 20($sp)
+					sw $t1, 24($sp)
+					sw $t2, 28($sp)
+					sw $t3, 32($sp)
+					sw $t4, 36($sp)
+					sw $t5, 40($sp)
+					sw $t6, 44($sp)
+					sw $t7, 48($sp)
+					sw $t8, 52($sp)
+					sw $t9, 56($sp)
+					
+					lb $t9, 0($t1)
+					
+				adicionarMotoPosicao2:
+					addi $t7, $t7, 33
+			adicionarCarro:
+	
+	finalizarAdicionarAutomovel:
+		jr $ra
+
+removerAutomovel:
+
+	finalizarRemoverAutomovel:
+
+removerMorador: #recebe em $a0 o numero do apartamento
+		  #recebe em $a1 o endereço do nome do morador a ser removido
+	
+	#início da chamada da função buscar
+		addi $sp, $sp, -12
+		sw $ra, 0($sp)
+		sw $a0, 4($sp)
+		sw $a1, 8($sp)
+	
+		add $a0, $a0, $0 #carrega em $a0 o número do apartamento a ser encontrado
+		jal buscar       #retorna em $v0 o endereço do apartamento com este número
+	
+		lw $ra, 0($sp)
+		lw $a0, 4($sp)
+		lw $a1, 8($sp)	  
+		addi $sp, $sp, 12
+	#final da chamada da função buscar
+	
+	addi $t0, $v0, 5 #registra em $t0 o endereço 0 da lista de nomes do apartamento
+	add $t1, $a1, $0 #registra em $t1 o endereço do nome a ser removido
+	lb $t2, 1($v0)   #carrega em $t2 o número de moradores no apartamento
+	add $t3, $0, $0  #registrador $t3 é auxiliar para o funcionamento da função
+	
+	repetirProcurarMorador:
+		beqz $t2, finalizarRemoverMorador
+		
+		#inicio da chamada da função strcmp
+			addi $sp, $sp, -28
+			sw $ra, 0($sp)
+			sw $a0, 4($sp)
+			sw $a1, 8($sp)
+			sw $t0, 12($sp)
+			sw $t1, 16($sp)
+			sw $t2, 20($sp)
+			sw $t3, 24($sp)
+			
+			add $a0, $t0, $0 #registra em $a0 o endereço da primeira string
+			add $a1, $t1, $0 #registra em $a1 o endereço da segunda string
+			jal strcmp       #compara as duas strings e retorna o resultado em $v0
+			
+			lw $ra, 0($sp)
+			lw $a0, 4($sp)
+			lw $a1, 8($sp)
+			lw $t0, 12($sp)
+			lw $t1, 16($sp)
+			lw $t2, 20($sp)
+			lw $t3, 24($sp)
+			addi $sp, $sp, 28
+		#final da chamada da função strcmp
+		
+		beqz $v0, reescreverMorador
+			addi $t0, $t0, 51 #registra a próxima posição da lista de nomes
+			addi $t2, $t2, -1 #decrementa o número de moradores a serem avaliados
+			j repetirProcurarMorador 
+	
+	reescreverMorador:
+		lb $t3, -1($t0)
+		beq $t3, 1, limparApartamento
+		add $t3, $t0, $0 #registra o endereço do nome do morador encontrado
+		
+		encontrarUltimoElemento:
+			beq $t2, 1, encontrouUltimoElemento
+				addi $t3, $t3, 51
+				addi $t2, $t2, -1
+				j encontrarUltimoElemento
+		
+		encontrouUltimoElemento:
+			#inicio da chamada da função strcpy
+				addi $sp, $sp, -28
+				sw $ra, 0($sp)
+				sw $a0, 4($sp)
+				sw $a1, 8($sp)
+				sw $t0, 12($sp)
+				sw $t1, 16($sp)
+				sw $t2, 20($sp)
+				sw $t3, 24($sp)
+			
+				add $a0, $t0, $0 #registra em $a0 o endereço da primeira string
+				add $a1, $t3, $0 #registra em $a1 o endereço da segunda string
+				addi $a2, $0, 51 #carrega o número máximo de caracteres que devem ser copiados
+				jal strncpy       #copia a segunda string no endereço da primeira
+			
+				lw $ra, 0($sp)
+				lw $a0, 4($sp)
+				lw $a1, 8($sp)
+				lw $t0, 12($sp)
+				lw $t1, 16($sp)
+				lw $t2, 20($sp)
+				lw $t3, 24($sp)
+				addi $sp, $sp, 28
+			#final da chamada da função strcpy
+			
+			j finalizarRemoverMorador
+	
+	limparApartamento:
+		addi $sp, $sp, -28
+		sw $ra, 0($sp)
+		sw $a0, 4($sp)
+		sw $a1, 8($sp)
+		sw $t0, 12($sp)
+		sw $t1, 16($sp)
+		sw $t2, 20($sp)
+		sw $t3, 24($sp)
+			
+		add $a0, $a0, $0  #registra em $a0 o numero do apartamento		
+		jal limpar        #esvazia apartamento
+			
+		lw $ra, 0($sp)
+		lw $a0, 4($sp)
+		lw $a1, 8($sp)
+		lw $t0, 12($sp)
+		lw $t1, 16($sp)
+		lw $t2, 20($sp)
+		lw $t3, 24($sp)
+		addi $sp, $sp, 28
+			
+	finalizarRemoverMorador:
+		jr $ra
+
+adicionarMorador: #recebe em $a0 o numero do apartamento
+		    #recebe em $a1 o endereço do nome do morador a ser adicionado
 		    
-		    
-	add $t0, $a0, $0 #registra em $t0 o endereço do apartamento
+       #inicio da chamada da função buscar
+       	addi $sp, $sp, -12 #reserva espaço no stack pointer
+       	sw $ra, 0($sp)     #armazena o endereço de retorno no stack pointer
+       	sw $a0, 4($sp)     #armazena o parâmetro $a0 no stack pointer
+       	sw $a1, 8($sp)     #armazena o parâmetro $a1 no stack pointer
+       	
+       	add $a0, $a0, $0   #carrega o número do apartamento a ser buscado
+       	
+       	jal buscar #retorna em $v0 o endereço do apartamento a ser buscado
+       	
+       	lw $ra, 0($sp)     #recupera o endereço de retorno do stack
+       	lw $a0, 4($sp)
+       	lw $a1, 8($sp)
+       	addi $sp, $sp, 12  #libera espaço no stack pointer
+       #final da chamada da função buscar
+       
+	add $t0, $v0, $0 #registra em $t0 o endereço do apartamento
 	add $t1, $a1, $0 #registra em $t1 o endereço da string nome
 	lb  $t2, 1($t0)  #carrega em $t2 o número atual de moradores no apartamento
-	add $t3, 5($t0)  #registra em $t3 o endereço do primeiro elemento da lista de moradores
+	add $t3, $t0, 5  #registra em $t3 o endereço do primeiro elemento da lista de moradores
 	add $t4, $0, $0  #registrador $t4 será auxiliar para o funcionamento da função
 	add $t5, $0, $0  #registrador $t5 será auxiliar para o funcionamento da função
 	
@@ -54,9 +296,10 @@ adicionarMorador: #registra em $a0 o endereço do apartamento em que deve ser ad
 	
 	beqz $t4, finalizarAdicionarMorador #se o valor carregado em $t4 for zero encerre a função
 						 #senão adicione o nome do morador a lista
+		add $t4, $t2, $0 #carrega em $t4 o número de posições ocupadas na lista de moradores
+		add $t5, $t3, $0 #registra em $t5 o endereço da posição zero do array de moradores
+
 		repetirEncontrarEndereco:
-			add $t4, $t2, $0 #carrega em $t4 o número de posições ocupadas na lista de moradores
-			add $t5, $t3, $0 #registra em $t5 o endereço da posição zero do array de moradores
 			beqz $t4, finalizarEncontrarEndereco #verifica se foi encontrada a próxima posição livre
 				addi $t5, $t5, 51 #registra em $t5 o endereço da próxima posição da lista
 				addi $t4, $t4, -1 #decrementa o número de posições ocupadas
@@ -75,11 +318,12 @@ adicionarMorador: #registra em $a0 o endereço do apartamento em que deve ser ad
 			sw $t4, 28($sp)
 			sw $t5, 32($sp)
 			
-			add $a0, $t5
-			add $a1, $a1
-			addi $a2, $0, 50
+			add $a0, $t5, $0 #registra em $a0 o endereço da primeira posição livre da lista de moradores
+			add $a1, $a1, $0 #registra em $a1 o endereço do nome que desejamos adicionar
+			addi $a2, $0, 50 #carrega o número máximo de caracteres como 50
 			
-			jal strncpy
+			jal strncpy #copia o nome que desejamos adicionar na primeira posição livre
+				     #limite de 50 caracteres
 			
 			lw $ra, 0($sp)
 			lw $a0, 4($sp)
@@ -93,66 +337,63 @@ adicionarMorador: #registra em $a0 o endereço do apartamento em que deve ser ad
 			addi $sp, $sp, 36
 		#fim da chamada da função strncpy
 		
-		addi $t2, $t2, 1
-		sw $t2, 1($t0)
+		addi $t2, $t2, 1 #incrementa o número de moradores no apartamento
+		sw $t2, 1($t0)   #carrega no apartamento o número de moradores incrementado
 	finalizarAdicionarMorador:
-		jr $ra
+		jr $ra           #volta para a main
 
-buscar: #recebe no registrador $a0 o primeiro endere�o da estrutura 
-	 #recebe no registrador $a1 o numero do apartamento a ser encontrado
-	 #caso n�o seja encontrado, ele retorna a posi��o do apartamento de n�mero zero (exce��o)
+buscar: #recebe no registrador $a0 o numero do apartamento a ser encontrado
+	 #caso seja encontrado, retorna o endereço do apartamento
+	 #caso n�o seja encontrado, ele retorna a posição nula da estrutura (exce��o)
 	
-	addi $t0, $a0, 2 #registra em $t0 o endere�o do primeiro apartamento da estrutura
+	addi $t0, $s0, 3 #registra em $t0 o endere�o do primeiro apartamento da estrutura
 			   #subsequentemente ele regista o endere�o dos apartamentos atualmente sendo avaliados
 			   
-	add $t1, $a1, $0 #registra em $t1 o n�mero do apartamento a ser encontrado
-	lb $t2, 0($t0)   #registra em $t2 o n�mero do apartamento atualmente sendo avaliado
+	add $t1, $a0, $0 #registra em $t1 o n�mero do apartamento a ser encontrado
+	lb $t2, 1($s0)   #carrega em $t2 o número de apartamentos da estrutura
+	lb $t3, 0($t0)   #registra em $t3 o n�mero do apartamento atualmente sendo avaliado
 	
 	
 	repetirBuscar:
 		
-		beq $t1, $t2, retornarEncontrado  #se o n�mero do apartamento procurado for igual ao do apartamento avaliado $t1 = $t2
-						      #ent�o retorne o n�mero do apartamento encontrado
-						      #sen�o v� para a primeira posi��o do pr�ximo apartamento
+		beq $t1, $t3, retornarEncontrado    #se o n�mero do apartamento procurado for igual ao do apartamento avaliado $t1 = $t2
+						        #ent�o retorne o n�mero do apartamento encontrado
+						        #sen�o v� para a primeira posi��o do pr�ximo apartamento
 						 
-		beq $t2, 5, retornarNaoEncontrado #se o n�mero do apartamento atual for o �ltimo (40) 
-						      #retorne o primeiro apartamento da estrutura (exce��o)
+		beq $t3, $t2, retornarNaoEncontrado #se o n�mero do apartamento atual for igual ao numero de apartamentos da estrutura 
+						        #retorne o endereço nulo da estrutura
 						 
-			addi $t0, $t0, 326 #avan�a $t0 para a posi��o do pr�ximo apartamento da estrutura
-			lb $t2, 0($t0) #registra o n�mero do apartamento atualmente sendo avaliado
-			j repetirBuscar #volta para o in�cio da repeti��o para avaliar o novo
+			addi $t0, $t0, 326 #registra em $t0 a posi��o do pr�ximo apartamento
+			lb $t3, 0($t0)     #registra o n�mero do apartamento atualmente sendo avaliado
+			j repetirBuscar    #volta para o in�cio da repeti��o para avaliar o novo
 			
 		 
 		
 	retornarEncontrado:
-		addi $v0, $t0, 0
-		jr $ra
+		addi $v0, $t0, 0 #registra o endereço do apartamento encontrado em $v0
+		jr $ra           #volta para a main
 		
 	retornarNaoEncontrado:
-		addi $t0, $a0, 1
-		addi $v0, $t0, 0
-		jr $ra
+		addi $v0, $a0, 2 #registra em $v0 o endereço nulo da estrutura
+		jr $ra           #volta para a main
 
 
-limpar: #recebe no registrador $a0 a primeiro endere�o da estrutura e em $a1 o n�mero do apartamento para torna-lo vazio
+limpar: #recebe em $a0 o n�mero do apartamento para torna-lo vazio
 
-	#inicio da chamada da fun��o buscar
+	 #inicio da chamada da fun��o buscar
 	
-		addi $sp, $sp, -12 #rezerva espa�o no stack pointer para o par�metro da fun��o e o valor de retorno ($a0 e $ra)
+		addi $sp, $sp, -8 #reserva espa�o no stack pointer
 	
-		sw $ra, 0($sp) #no espa�o reservado armazena o valor de retorno desta fun��o
-		sw $a0, 4($sp) #armazena o par�mentro da fun��o em $a0 para que ele seja preservado durante a chamada de outra fun��o
-		sw $a1, 8($sp) #armazena o par�mentro da fun��o em $a1 para que ele seja preservado durante a chamada de outra fun��o
+		sw $ra, 0($sp) #armazena o valor de retorno desta fun��o
+		sw $a0, 4($sp) #armazena o par�mentro da fun��o em $a0
 	
 		add $a0, $a0, $0
-		add $a1, $a1, $0
 		jal buscar 
 	
-		lw $ra, 0($sp) #recupera do espa�o reservado o valor de retorno desta fun��o
-		lw $a0, 4($sp) #recupera o par�mentro da fun��o em $a0 que foi preservado durante a chamada de outra fun��o
-		lw $a1, 8($sp) #armazena o par�mentro da fun��o em $a1 que foi preservado durante a chamada de outra fun��o
+		lw $ra, 0($sp) #recupera o valor de retorno desta fun��o
+		lw $a0, 4($sp) #recupera o par�mentro da fun��o em $a0
 	
-		addi $sp, $sp, 12 #libera espa�o no stack pointer
+		addi $sp, $sp, 8 #libera espa�o no stack pointer
 	
 	#fim da chamada da fun��o buscar
 	
@@ -166,63 +407,70 @@ limpar: #recebe no registrador $a0 a primeiro endere�o da estrutura e em $a1 o
 	jr $ra
 
 
-formatar: #recebe no registrador $a0 o primeiro endere�o da estrutura e torna todos os apartamentos vazios
+formatar: #carrega no registrador $a0 o número de apartamentos da estrutura
 
-	sb $0, 0($a0)
-	sb $0, 1($a0)
-	addi $t0, $a0, 2 #guarda no registrador $t0 o primeiro endere�o do apartamento que esta sendo verificado atualmente
-	addi $t1, $0, 1  #guarda no registrador $t1 o numero que ser� preenchido no apartamento avaliado
-	add $t2, $0, $0  #o registrador $t2 � usado para armazenar endere�os diferentes de $t0
-	add $t3, $0, $0  #o registrador $t3 � usado para armazenar os valores que se deseja consultar
+	sb $0, 0($s0)  #primeiro byte da estrutura indica quantos apartamentos estão atualmente ocupados
+	sb $a1, 1($s0) #segundo byte da estrutura indica o número de apartamentos existem
+	sb $0, 2($s0)  #terceiro byte é o endereço nulo da estrutura (exceção)
+	
+	addi $t0, $s0, 3 #registra no registrador $t0 endere�o do primeiro apartamento
+	lb   $t1, 1($s0) #carrega em $t1 o número de apartamentos a serem inicializados
+	addi $t2, $0, 1  #carrega em $t2 o numero do primeiro apartamento
+	add  $t3, $0, $0 #registrador $t3 é auxiliar para o funcionamento da função
+	add  $t4, $0, $0 #registrador $t4 é auxiliar para o funcionamento da função
 
 	repetirFormatar:
 
-		sb $t1, 0($t0) #carrega na mem�ria o numero correto do apartamento
+		sb $t2, 0($t0) #carrega na mem�ria o numero correto do apartamento
 
-		lb $t3, 1($t0) #carrega no registrador $t3 o valor do numero de moradores no apartamento
+		lb $t4, 1($t0) #carrega no registrador $t4 o numero de moradores no apartamento
 	
-		beq $t3, $0, continuarFormatar #se o numero de moradores no apartamento for zero, v� para continar
+		beq $t4, $0, continuarFormatar #se o numero de moradores no apartamento for zero, v� para continar
 					          #sen�o chame a fun��o limpar para este apartamento		
 					
 			#inicio da chamada da fun��o limpar apartamento
 		
-				addi $sp, $sp, -24 #reserva espa�o no stack pointer para: 
+				addi $sp, $sp, -28 #reserva espa�o no stack pointer para: 
 						     #registrar o endere�o de retorno no $ra 
 						     #preservar as variaveis da fun��o
 		
-				sw $ra, 0($sp) #no espa�o reservado armazena o valor de retorno desta fun��o
-				sw $a0, 4($sp) #armazena o par�mentro da fun��o em $a0 para que ele seja preservado durante a chamada de outra fun��o
-				sw $t0, 8($sp) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra fun��o
-				sw $t1, 12($sp) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra fun��o
-				sw $t2, 16($sp) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra fun��o
-				sw $t3, 20($sp) #armazena o valor de $t0 para que ele seja preservado durante a chamada de outra fun��o
+				sw $ra, 0($sp) #armazena o valor de retorno desta fun��o
+				sw $a0, 4($sp) #armazena o par�mentro da fun��o em $a0
+				sw $t0, 8($sp) #armazena o valor de $t0
+				sw $t1, 12($sp) #armazena o valor de $t1
+				sw $t2, 16($sp) #armazena o valor de $t2
+				sw $t3, 20($sp) #armazena o valor de $t3
+				sw $t4, 24($sp) #armazena o valor de $t4
 			
 
-				addi $a0, $a0, 0 #passa como par�metro para a pr�xima fun��o o primeiro endere�o da estrutura
-				addi $a1, $t1, 0 #passa como par�metro para a pr�xima fun��o o n�mero do apartamento a ser limpo
-				jal limpar #vai para a fun��o limpar e o endere�o da pr�xima instru��o � armzenado em $ra
+				addi $a0, $a0, 0 #passa como par�metro primeiro endere�o da estrutura
+				addi $a1, $t2, 0 #passa como par�metro o n�mero do apartamento a ser limpo
+				jal limpar       #vai para a fun��o limpar
 		
-				lw $ra, 0($sp) #recupera o valor de retorno desta fun��o em $ra
-				lw $a0, 4($sp) #recupera o par�mentro da fun��o em $a0 que foi preservado durante a chamada de outra fun��o
-				lw $t0, 8($sp) #recupera o valor de $t0 que foi preservado durante a chamada de outra fun��o
-				lw $t1, 12($sp) #recupera o valor de $t0 que foi preservado durante a chamada de outra fun��o
-				lw $t2, 16($sp) #recupera o valor de $t0 que foi preservado durante a chamada de outra fun��o
-				lw $t3, 20($sp) #recupera o valor de $t0 que foi preservado durante a chamada de outra fun��o
+				lw $ra, 0($sp)  #recupera o valor de retorno desta fun��o
+				lw $a0, 4($sp)  #recupera o par�metro da fun��o em $a0
+				lw $t0, 8($sp)  #recupera o valor de $t0
+				lw $t1, 12($sp) #recupera o valor de $t1
+				lw $t2, 16($sp) #recupera o valor de $t2
+				lw $t3, 20($sp) #recupera o valor de $t3
+				lw $t4, 24($sp) #recupera o valor de $t4
 			
 		
-				addi $sp, $sp, 24 #libera espa�o no stack pointer
+				addi $sp, $sp, 28 #libera o espa�o no stack pointer
 		
 			#fim da chamada da fun��o de limpar apartamento
 		
 
 		continuarFormatar:
 
-			beq $t1, 40, sairFormatar #se o numero do apartamento verificado � o ultimo (40), ent�o volte para a main
-						  #sen�o incremente o n�mero do apartamento e volte para repetir
+			beq $t2, $t1, sairFormatar #se o numero de apartamentos adicionados for igual ao máximo encerre a função
+						      #sen�o incremente o n�mero do apartamento e verifique a próxima posição
 		
-				addi $t1, $t1, 1 #incrementa o numero do apartamento que esta sendo verificado
-				addi $t0, $t0, 326 #armazena em $t0 o endere�o para o proximo apartamento a ser verificado
-				j repetirFormatar #retorne para a repeti��o
+				addi $t0, $t0, 326  #armazena em $t0 o endere�o para o proximo apartamento a ser verificado
+				addi $t2, $t2, 1    #incrementa o numero do apartamento que esta sendo verificado
+				
+				
+				j repetirFormatar   #repita a função
 
 	sairFormatar:
 		jr $ra #volta para a main
@@ -231,14 +479,51 @@ formatar: #recebe no registrador $a0 o primeiro endere�o da estrutura e torna 
 
 
 main: #onde a chamada das opera��es e intera��o com o usuario ocorrem
-lui $s0, 0x00001001
+	lui $s0, 0x00001001
+	ori $s0, 0x00000190
 
-addi $a0, $s0, 0
-jal formatar
+	addi $a0, $s0, 0
+	addi $a1, $0, 1
+	jal formatar
+	
+	la $s1, nome1
+	la $s2, nome2
+	la $s3, nome3
+	la $s4, nome4
+	la $s5, nome5
+	la $s6, nome6
+	
+	addi $a0, $0, 1
+	add $a1, $s1, $0
+	jal adicionarMorador
+	
+	addi $a0, $0, 1
+	add $a1, $s2, $0
+	jal adicionarMorador
+	
+	addi $a0, $0, 1
+	add $a1, $s3, $0
+	jal adicionarMorador
+	
+	addi $a0, $0, 1
+	add $a1, $s4, $0
+	jal adicionarMorador
+	
+	addi $a0, $0, 1
+	add $a1, $s5, $0
+	jal adicionarMorador
+	
+	addi $a0, $0, 1
+	add $a1, $s6, $0
+	jal adicionarMorador
+	
+	addi $a0, $0, 1
+	add $a1, $s4, $0
+	jal removerMorador
+	
 
-addi $a0, $s0, 0
-addi $a1, $0, 3
-jal buscar
+	addi $a0, $0, 3
+	jal buscar
 
 
 
