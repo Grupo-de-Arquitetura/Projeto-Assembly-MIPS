@@ -1,30 +1,190 @@
 .data
 
-nome1: .asciiz "Luiz"
-nome2: .asciiz "Eloisa"
-nome3: .asciiz "Henrique"
-nome4: .asciiz "Marconi"
-nome5: .asciiz "Vera"
-nome6: .asciiz "Paulo"
+pedido: .asciiz "LAGD-shell>>"
 
-certo: .asciiz "Certo"
-errado: .asciiz "Errado"
+buffer: .space 150
 
-tipo1: .asciiz "m"
-modelo1: .asciiz "Toyota"
-cor1: .asciiz "Vermelho"
+stringApartamento: .asciiz "Apartamento: "
 
-tipo2: .asciiz "c"
-modelo2: .asciiz "Honda"
-cor2: .asciiz "Azul"
+stringMoradores: .asciiz "Moradores:"
 
-tipo3: .asciiz "m"
-modelo3: .asciiz "Honda"
-cor3: .asciiz "Verde"
+stringCarro: .asciiz "Carro:"
+
+stringMotos: .asciiz "Motos:"
+
+quebraDeLinha: .asciiz "\n"
+
+quebraDeLinhaDupla: .asciiz "\n\n"
+
+stringNumero: .space 4
+
+stringApartamentosVazios: .asciiz "Apartamentos vazios: "
+
+stringApartamentosOcupados: .asciiz "Apartamentos ocupados: "
+
+espacoComando1: .space 4
+espacoComando2: .space 51
+espacoComando3: .space 21
+espacoComando4: .space 11
+
+comandoInvalido: .asciiz "Comando digitado é inválido/n"
 
 .text
 
 j main
+
+transformarStringEmNumero: #recebe em $a0 uma string com tamanho até 2 em $a0
+			      #retorna em $v0 um número que é represntado pela string
+			      #retorna 1 em $v1 caso haja erros
+	
+	add $t0, $a0, $0 #registra em $t0 o endereço da string
+	add $t1, $0, $0  #registrador $t1 é auxiliar no funcionamento da string
+	add $t2, $0, $0  #registrador $t2 é auxiliar no funcionamento da string
+	
+	percorrerStringNumero:
+		lb $t1, 0($t0) #carrega o caractere na string
+		beq $t1, 0, finalizarPercorrerStringNumero #verifica se não é zero
+		add $t0, $t0, 1 #incrementa o endereço da string
+		add $t2, $t2, 1 #incrementa o numero de espacos contados
+		
+		j percorrerStringNumero
+		
+	finalizarPercorrerStringNumero:
+		sle $t1, $t2, 2 #verifica se o numero de espacos contados é menor ou igual a 2
+		
+		beq $t1, 0, erroAoTransformarStringEmNumero #se não for jogue exceção 1
+		
+		add $t0, $a0, $0 #registra em $t0 o endereço da string
+		
+		lb $t1, 0($t0)     #carrega o byte mais significativo
+		addi $t1, $t1, -48 #carrega o valor dele em $t1
+		sll $t2, $t1, 3    #multiplica por 8
+		sll $t3, $t1, 1    #multiplica por 2
+		add $t1, $t2, $t3  #soma os valores (multiplica por 10)
+		
+		lb $t2, 1($t0)     #carrega o byte menos significativo
+		addi $t2, $t2, -48 #carrega o valor dele em $t2
+		
+		add $v0, $t1, $t2  #carrega o valor total da string em $vo
+		
+		j finalizarTransformarStringEmNumero
+		
+	erroAoTransformarStringEmNumero:
+		addi $v1, $0, 1
+			      
+	finalizarTransformarStringEmNumero:
+		jr $ra
+
+reconhecerStringComandos: #recebe em $a0 o endereço de um comando
+			     #armazena nos espacosComando os valores e as strings
+			     #retorna em $v0 o número de comandos encontrados
+	add $t0, $a0, $0 #carrega em $t0 o endereço do comando
+	add $t1, $0, $0  #registrador $t1 é auxiliar para o funcionamento da função
+	add $t2, $0, $0  #registrador $t2 é auxiliar para o funcionamento da função
+	add $t3, $0, $0  #registrador $t3 é auxiliar para o funcionamento da função
+	
+	continuarPercorrendoComando:
+		lb $t1, 0($t0)   #carrega em $t1 o caractere no endereço em $t0
+		beq $t1, '-', preencherEspacoComando1 #se encontrar um traço preencha próximo parametro
+		beq $t1, '\0', finalizarReconhecerComando #se encontrar zero encerre
+			addi $t0, $t0, 1 #incremente o endereço da origem
+			j continuarPercorrendoComando
+	
+	preencherEspacoComando1:
+		addi $t3, $t3, 1
+		la $t2, espacoComando1
+		
+		continuarPercorrendoComando1:
+			addi $t0, $t0, 1
+			lb $t1, 0($t0)
+			
+			beq $t1, '-', transformarEmNumero
+			beq $t1, '\0', finalizarReconhecerComando
+			sb $t1, 0($t2)
+			addi $t2, $t2, 1
+			
+			transformarEmNumero:
+				#inicio da chamada da função transformar string em numero
+				addi $sp, $sp, -24
+				sw $ra, 0($sp)
+				sw $a0, 4($sp)
+				sw $t0, 8($sp)
+				sw $t1, 12($sp)
+				sw $t2, 16($sp)
+				sw $t3, 20($sp)
+				
+				la $a0, espacoComando1
+				jal transformarStringEmNumero
+				
+				bnez $v1, erroAoReconhecerString
+				la $t0, espacoComando1
+				sb $v0, 0($t0)
+				
+				lw $ra, 0($sp)
+				lw $a0, 4($sp)
+				lw $t0, 8($sp)
+				lw $t1, 12($sp)
+				lw $t2, 16($sp)
+				lw $t3, 20($sp)
+				addi $sp, $sp, -24
+				#fim da chamada da função
+			
+			j continuarPercorrendoComando1
+			
+	preencherEspacoComando2:
+		sb $0, 0($t2)
+		addi $t3, $t3, 1
+		la $t2, espacoComando2
+		
+		continuarPercorrendoComando2:
+			addi $t0, $t0, 1
+			lb $t1, 0($t0)
+			
+			beq $t1, '-', preencherEspacoComando3
+			beq $t1, '\0', finalizarReconhecerComando
+			sb $t1, 0($t2)
+			addi $t2, $t2, 1
+				
+			j continuarPercorrendoComando2
+			
+	preencherEspacoComando3:
+		sb $0, 0($t2)
+		addi $t3, $t3, 1
+		la $t2, espacoComando3
+		
+		continuarPercorrendoComando3:
+			addi $t0, $t0, 1
+			lb $t1, 0($t0)
+			
+			beq $t1, '-', preencherEspacoComando4
+			beq $t1, '\0', finalizarReconhecerComando
+			sb $t1, 0($t2)
+			addi $t2, $t2, 1
+				
+			j continuarPercorrendoComando3
+			
+	preencherEspacoComando4:
+		sb $0, 0($t2)
+		addi $t3, $t3, 1
+		la $t2, espacoComando4
+		
+		continuarPercorrendoComando4:
+			addi $t0, $t0, 1
+			lb $t1, 0($t0)
+			
+			beq $t1, '-', finalizarReconhecerComando
+			beq $t1, '\0', finalizarReconhecerComando
+			sb $t1, 0($t2)
+			addi $t2, $t2, 1
+				
+			j continuarPercorrendoComando4
+	
+	erroAoReconhecerString:
+		addi $v1, $0, 1
+	
+	finalizarReconhecerComando:
+		add $v0, $t3, $0
+		jr $ra	
 
 strncpy: #recebe em $a0 e em $a1 os endere�os para a c�pia de uma string com origem em $a1 e destino em $a0
 	  #carrega em $a2 o número máximo de caracteres que devem ser copiados
@@ -92,15 +252,427 @@ strcmp: #recebe em $a0 e $a1 os endere�os para a compara��o de strings
 		add $v0, $t4, $0  	     #carrega o valor da compara��o em $v0 (retorno)
 		jr $ra           	     #volta para a main
 
+strcat: #recebe em $a0 e $a1 os endere�os para a concatena��o de strings
+	 #retorna o endere�o de $a0 definido como destino enquanto $a1 � a fonte
+	 
+	add $t0, $a0, $0 #recebe o endere�o da string destino
+	add $t1, $a1, $0 #recebe o endere�o da string fonte
+	add $t2, $0, $0  #registrador auxiliar para o funcionamento da fun��o
+	
+	percorrerDestinoStrcat:
+		lb $t2, 0($t0) #carrega o caractere presente no endere�o em $t0
+		beq $t2, $0, copiarFonteStrcat #verifica se o caractere carregado n�o � nulo
+						   #se for nulo, v� para a copiarFonteStrcat
+			addi $t0, $t0, 1 #incrementa o endere�o em $t0
+			
+			j percorrerDestinoStrcat #mant�m a repeti��o de percorrerDestinoStrcat
+	
+	copiarFonteStrcat:
+		lb $t2, 0($t1) #carrega o caractere no endere�o da string fonte
+		beq $t2, $0, finalizarStrcat #verifica se o caractere � nulo
+						 #se for nulo finalize a fun��o
+						 #sen�o continue a fun��o
+			sb $t2, 0($t0) #carrega o caractere em $t2 no endere�o em $t0
+			
+			addi $t0, $t0, 1 #incrementa o endere�o em $t0
+			addi $t1, $t1, 1 #incrementa o endere�o em $t1
+			
+			j copiarFonteStrcat #mant�m a repeti��o de copiarFonteStrcat
+	
+	finalizarStrcat:
+		sb $0, 0($t0) #carrega o caractere nulo no final da string destino
+		
+		add $v0, $a0, $0 #carrega o endere�o da string fonte em $v0
+		jr $ra #volta para a main
+
+
+infoGeral:#receb $s1 como parâmetro para a criação de uma string
+	   #retorna em $v0 o endereço de $s1
+	   
+	 add $t0, $s1, $0 #registra em $t0 o endereço de destino da string
+	 add $t1, $0, $0  #registrador $t1 é auxiliar para o funcionamento da função
+	 add $t2, $0, $0  #registrador $t2 é auxiliar para o funcionamento da função
+	 
+	 #inicio da chamada da função strncpy e strncat
+	 	addi $sp, $sp, -12
+	 	sw $ra, 0($sp)
+	 	sw $t0, 4($sp)
+	 	sw $t1, 8($sp)
+	 	
+		 	#adiciona a string apartamentos ocupados
+		 	add $a0, $t0, $0 #registrar o endereço da string destino
+	 		la $t1, stringApartamentosOcupados
+		 	add $a1, $t1, $0 #registrar o endereço da string origem
+		 	addi $a2, $0, 25 #carrega o número máximo de caracteres
+	 		jal strncpy
+	 	
+		 	#gera uma string a partir do número
+		 	la $t0, stringNumero #carrega o endereço para a string numero
+	 		lb $t1, 0($s0)       #carrega em $t1 o valor do número de apartamentos ocupados
+		 	
+		 	add $a0, $t1, $0 #carrega o número de apartamentos ocupados em $a0
+	 		add $a1, $t0, $0 #registra o endereço de destino da string
+		 	jal numeroString
+	 	
+	 	
+		 	#copia a string numero na string destino
+	 		lw $t0, 4($sp)
+		 	
+		 	add $a0, $t0, $0 #registra o endereço da string destino em $a0
+	 		add $a1, $v0, $0 #registra o endereço da string numero em $a1
+		 	jal strcat       #concatena as strings
+		 	
+	 		#insere uma quebra de linha
+			lw $t0, 4($sp)	 #recupera o endereço em $t0 do stack pointer
+			
+			add $a0, $t0, $0      #registra o endereço da string destino
+			la $t1, quebraDeLinha #registra o endereço da string quebra de linha
+			add $a1, $t1, $0      #registra o endereço da string morador em $a1
+			jal strcat            #copia a string morador na string em $t1
+		
+			#adiciona a string apartamentos vazios
+		 	add $a0, $t0, $0 #registrar o endereço da string destino
+	 		la $t1, stringApartamentosVazios
+		 	add $a1, $t1, $0 #registrar o endereço da string origem
+		 	addi $a2, $0, 20 #carrega o número máximo de caracteres
+	 		jal strncpy
+	 	
+		 	#gera uma string a partir do número
+		 	la $t0, stringNumero #carrega o endereço para a string numero
+	 		lb $t1, 0($s0)       #carrega em $t1 o valor do número de apartamentos ocupados
+		 	lb $t2, 1($s0)       #carrega em $t2 o valor de apartamentos existentes
+		 	
+	 		sub $t1, $t2, $t1    #subtrai os dois para conseguir o número de apartamentos vazios
+	 	
+		 	add $a0, $t1, $0 #carrega o número de apartamentos vazios em $a0
+		 	add $a1, $t0, $0 #registra o endereço de destino da string
+	 		jal numeroString
+	 	
+	 	
+		 	#copia a string numero na string destino
+		 	lw $t0, 4($sp)
+	 	
+	 		add $a0, $t0, $0 #registra o endereço da string destino em $a0
+		 	add $a1, $v0, $0 #registra o endereço da string numero em $a1
+		 	jal strcat       #concatena as strings		
+	 		
+		lw $ra, 0($sp)
+	 	lw $t0, 4($sp)
+	 	lw $t1, 8($sp)
+	 	addi $sp, $sp, 12
+	 #fim da chamada das funções strcat e strncpy
+	 
+	 jr $ra
+	 	
+	 	
+numeroString: #recebe em $a0 um numero inteiro positivo
+		#retorna em $v0 uma string desse número
+		#projetado para funcionar com números até 78
+		
+	addi $t0, $a0, 48 #tenta encontrar o número na tabela ascii
+	add $t1, $0, $0   #registrador $t1 é auxiliar durante o funcionamento da função
+	add $t2, $0, $0   #registrador $t2 é auxiliar durante o funcionamento da função
+	
+	encontrarDigitos:
+		slti $t2, $t0, 58         #se o valor estiver fora da faixa de valores dos numeros decimais
+		beq $t2, 0, reduzirNumero # reduza o número e incremente a casa da base 10 em $t1
+			j finalizarNumeroString
+			
+		reduzirNumero: 
+		addi $t0, $t0, -10 #reduza o valor em 10
+		addi $t1, $t1, 1   #incremente a potência 10
+		j encontrarDigitos
+	finalizarNumeroString:
+	
+	la $t2, stringNumero
+	
+	sb $t0, 0($t2)
+	sb $t1, 1($t2)
+	sb $0, 2($t2)
+	
+	add $v0, $t2, $0
+	jr $ra
+	
+listarMoradores: #recebe em $a0 o endereço da string destino
+		   #recebe em $a1 o endereço do apartamento
+		   
+	add $t0, $a0, $0 #registra em $t0 o endereço destino
+	add $t1, $a1, $0 #registra em $t1 o endereço do apartamento
+	add $t2, $0, $0  #registrador $t2 é auxiliar para o funcionamento da função
+	
+	addi $t1, $t1, 5 #registra em $t1 o endereço da lista de moradores
+	lb $t2, -4($t1)   #carrega em $t2 o número de moradores no apartamento
+	
+	continuarCopiandoMoradores:
+		beqz $t2, finalizarListarMoradores
+		
+		#inicio da chamada da função strcat
+			addi $sp, $sp, -20
+			sw $ra, 0($sp)
+			sw $a0, 4($sp)
+			sw $t0, 8($sp)
+			sw $t1, 12($sp)
+			sw $t2, 16($sp)
+			
+			lw $t0, 8($sp)
+			la $t1, quebraDeLinha
+			
+			add $a0, $t0, $0 #registra o endereço da string destino em $a0
+			add $a1, $t1, $0 #registra a string quebra de linha em $a1
+			jal strcat
+			
+			lw $t0, 8($sp)
+			lw $t1, 12($sp)
+			
+			add $a0, $t0, $0 #registra o endereço da string destino
+			add $a1, $t1, $0 #registra o endereço do nome do morador
+			jal strcat       #concatena o nome do morador na string destino
+			
+			lw $ra, 0($sp)
+			lw $a0, 4($sp)
+			lw $t0, 8($sp)
+			lw $t1, 12($sp)
+			lw $t2, 16($sp)
+			addi $sp, $sp, 20
+		#fim da chamada da função strcat
+		
+		addi $t1, $t1, 51 #registra a posição do próximo morador
+		addi $t2, $t2, -1 #decrementa o número de moradores a copiar
+		
+		j continuarCopiandoMoradores
+		
+	finalizarListarMoradores:
+		jr $ra
+
+listarVeiculos: #recebe em $a0 o endereço da string destino
+		 #recebe em $a1 o endereço do apartamento
+		 
+	add $t0, $a0, $0 #registra em $t0 o endereço da string destino
+	add $t1, $a1, $0 #registra em $t1 o endereço do apartamento
+	add $t2, $0, $0  #registrador $t2 é auxiliar para o funcionamento da função
+	add $t3, $0, $0  #registrador $t3 é auxiliar para o funcionamento da função
+	
+	lb $t2, 2($t1) #carrega em $t2 o numero de carros no apartamento
+	bnez $t2, listarVeiculo #se o valor de $t2 não for zero
+				   #liste veiculos
+				   #senão coloque o valor do numero de motos em $t2
+	
+		lb $t2, 3($t1) #carrega o número de motos no apartamento
+		addi $t3, $t3, 1 #incrementa o valor de $t3
+		
+		listarVeiculo:
+		#inicio da chamada das funções strcat
+			addi $sp, $sp, -28
+			sw $ra, 0($sp)
+			sw $a0, 4($sp)
+			sw $a1, 8($sp)
+			sw $t0, 12($sp)
+			sw $t1, 16($sp)
+			sw $t2, 20($sp)
+			sw $t3, 24($sp)
+			
+			bnez $t3, listarMotos #se $t3 não for igual a zero adicione o motos
+						 #senão adicione motos
+						 
+				add $a0, $t0, $0    #registra o endereço da string destino em $a0
+				la $t1, stringCarro #registra o endereço da string carro em $t1
+				add $a1, $t1, $0    #registra o endereço da string carro em $a1
+				jal strcat
+				
+				j continuarListarVeiculos
+			
+			listarMotos:
+				add $a0, $t0, $0    #registra o endereço da string destino em $a0
+				la $t1, stringMotos #registra o endereço da string motos em $t1
+				add $a1, $t1, $0    #registra o endereço da string motos em $t1
+				jal strcat
+			
+			continuarListarVeiculos:
+				lw $a1, 8($sp)      #recupera o endereço do apartamento do stack pointer
+				add $t3, $a1, 260   #registra o endereço da primeira posicao da lista de veiculos
+				
+				#insere a string quebra de linha dupla
+				lw $t0, 12($sp)     #recupera o endereço da string destino do stack pointer
+				
+				add $a0, $t0, $0           #registra em $a0 o endereço da string destino
+				la $t1, quebraDeLinhaDupla #registra em $t2 o endereço da string quebra de linha dupla
+				add $a1, $t1, $0           #registra em $a1 o endereço da quebra de linha dupla
+				jal strcat
+				
+				lw $t2, 20($sp)
+				
+				repetirListarVeiculos:
+				beqz $t2, acabarChamadaStrcat #se o numero de veiculos for igual a zero finalize a chamada
+					
+					#insere o modelo do primeiro veiculo na string destino
+					lw $t0, 12($sp) #recupera o endereço da string de destino do stack pointer
+					lw $t1, 16($sp) #recupera o endereço do apartamento
+					
+					add $a0, $t0, $0   #registra o endereço da string de destino em $a0
+					addi $a1, $t3, 1   #registra o endereço do modelo do primeiro veiculo
+					jal strcat         #copia o modelo do primeiro veiculo na string de destino
+					
+					#insere uma quebra de linha
+					lw $t0, 12($sp) #recupera o endereço da string de destino do stack pointer
+		
+					add $a0, $t0, $0      #registra o endereço da string destino
+					la $t1, quebraDeLinha #registra o endereço da string quebra de linha
+					add $a1, $t1, $0      #registra o endereço da string morador em $a1
+					jal strcat            #copia a string morador na string em $t1
+					
+					#insere a cor do primeiro veiculo na string destino
+					lw $t0, 12($sp) #recupera o endereço da string de destino do stack pointer
+					lw $t1, 16($sp) #recupera o endereço do apartamento
+					
+					add $a0, $t0, $0   #registra o endereço da string de destino em $a0
+					addi $a1, $t3, 22  #registra o endereço do modelo do primeiro veiculo
+					jal strcat         #copia o modelo do primeiro veiculo na string de destino
+			
+					#insere a string quebra de linha dupla
+					lw $t0, 12($sp)    #recupera o endereço da string destino do stack pointer
+				
+					add $a0, $t0, $0           #registra em $a0 o endereço da string destino
+					la $t1, quebraDeLinhaDupla #registra em $t2 o endereço da string quebra de linha dupla
+					add $a1, $t1, $0           #registra em $a1 o endereço da quebra de linha dupla
+					jal strcat
+					
+					lw $t2, 20($sp)
+					
+					addi $t3, $t3, 33  #carrega a proxima posição da lista de veiculos
+					
+					add $t2, $t2, -1
+					
+					sw $t2, 20($sp)
+					
+					j repetirListarVeiculos
+				
+			acabarChamadaStrcat:
+			
+			lw $ra, 0($sp)
+			lw $a0, 4($sp)
+			lw $a1, 8($sp)
+			lw $t0, 12($sp)
+			lw $t1, 16($sp)
+			lw $t2, 20($sp)
+			lw $t3, 24($sp)
+			addi $sp, $sp, 28
+		#fim da chamada das funções strcat
+	
+	finalizarListarVeiculos:
+		jr $ra
 
 infoApartamento: #recebe em $a0 o número do apartamento
+		   #retorna no endereço em $s1 uma string com as informações do apartamento
 
 	#inicio da chamada da função buscar
 		addi $sp, $sp, -8
 		sw $ra, 0($sp)
 		sw $a0, 4($sp)
+		
+		add $a0, $a0, $0
+		jal buscar #retorna em $v0 o endereço do apartamento buscado
+		
+		lw $ra, 0($sp)
+		lw $a0, 4($sp)
+		addi $sp, $sp, 8
+	#final da chamada da função buscar
+	
+	beq $v1, 1, finalizarInfoApartamento #(exceção 1)
 
-
+	add $t0, $v0, $0 #registra em $t0 o endereço do apartamento
+	add $t1, $s1, $0 #registra em $t1 o endereço de destino da string
+	add $t2, $0, $0  #registrador $t2 será auxiliar para o funcionamento da função
+	add $t3, $0, $0  #registrador $t3 será auxiliar para o funcionamento da função
+	
+	#inicio da chamada da função strncpy e numeroString
+		addi $sp, $sp, -24
+		sw $ra, 0($sp)
+		sw $a0, 4($sp)
+		sw $t0, 8($sp)
+		sw $t1, 12($sp)
+		sw $t2, 16($sp)
+		sw $t3, 20($sp)
+		
+			#insere a string apartamento no destino
+			add $a0, $t1, $0 #registra o endereço de destino da string em $a0
+			la $t2, stringApartamento #registra o endereço da string apartamento em $t2
+			add $a1, $t2, $0 #registra a string que deve ser copiada
+			addi $a2, $0, 15 #carrega o número máximo de caracteres da string
+			jal strncpy      #copia a string numero apartamento no endereço em $t1
+		
+			#insere o numero do apartamento no destino
+			lw $t0, 8($sp) #recupera o endereço do apartamento em $t0 do stack pointer
+			lb $t2, 0($t0) #carrega o numero do apartamento em $t2
+		
+			add $a0, $t2, $0 #passa o numero do apartamento como parâmetro em $a0
+			jal numeroString #retorna a string do número em $v0
+		
+			lw $t1, 12($sp)    #recupera o endereço da string destino do stack pointer
+			add $t2, $v0, $0     #guarda o endereço da string em $t2
+		
+			add $a0, $t1, $0 #registra em $a0 o endereço da string destino
+			add $a1, $t2, $0 #registra em $a1 o endereço da string numero
+			jal strcat       #copia a string numero na string destino
+		
+			#insere a string quebra de linha dupla
+			lw $t1, 12($sp)    #recupera o endereço da string destino do stack pointer
+			
+			add $a0, $t1, $0        #registra em $a0 o endereço da string destino
+			la $t2, quebraDeLinhaDupla   #registra em $t2 o endereço da string quebra de linha dupla
+			add $a1, $t2, $0        #registra em $a1 o endereço da quebra de linha dupla
+			jal strcat
+			
+			#insere a string morador no destino
+			lw $t1, 12($sp)
+			
+			add $a0, $t1, $0        #registra o endereço da string destino
+			la $t2, stringMoradores #registra o endereço da string morador
+			add $a1, $t2, $0        #registra o endereço da string morador em $a1
+			jal strcat              #copia a string morador na string em $t1
+		
+			#insere uma quebra de linha
+			lw $t1, 12($sp)
+		
+			add $a0, $t1, $0       #registra o endereço da string destino
+			la $t2, quebraDeLinha  #registra o endereço da string quebra de linha
+			add $a1, $t2, $0       #registra o endereço da string morador em $a1
+			jal strcat             #copia a string morador na string em $t1
+		
+			#insere a lista de Moradores do apartamento
+			lw $t0, 8($sp)
+			lw $t1, 12($sp)
+		
+			add $a0, $t1, $0 #registra em $a0 o endereço da string destino
+			add $a1, $t0, $0 #registra em $a1 o endereço do apartamento
+			jal listarMoradores #adiciona na string destino o nome dos moradores
+			
+			#insere a string quebra de linha dupla
+			lw $t1, 12($sp)    #recupera o endereço da string destino do stack pointer
+			
+			add $a0, $t1, $0           #registra em $a0 o endereço da string destino
+			la $t2, quebraDeLinhaDupla #registra em $t2 o endereço da string quebra de linha dupla
+			add $a1, $t2, $0           #registra em $a1 o endereço da quebra de linha dupla
+			jal strcat
+			
+			#insere a lista de Veiculos do apartamento
+			lw $t0, 8($sp)  #recupera o endereço do apartamento do stack pointer
+			lw $t1, 12($sp) #recupera o endereço da string destino do stack pointer
+			
+			add $a0, $t1, $0 #registra o endereço da string destino em $a0
+			add $a1, $t0, $0 #registra o endereço do apartamento em $a1
+			jal listarVeiculos #adicione a lista de veiculos
+	
+		lw $ra, 0($sp)
+		lw $a0, 4($sp)
+		lw $t0, 8($sp)
+		lw $t1, 12($sp)
+		lw $t2, 16($sp)
+		lw $t3, 20($sp)
+		addi $sp, $sp, 24
+	#final da chamada da função strncpy e numeroString
+	
+	finalizarInfoApartamento:
+		jr $ra
 
 buscarVeiculo: #recebe em $a0 o endereço da lista de veiculos
 		 #recebe em $a1 o endereço do caractere do tipo do veiculo
@@ -493,6 +1065,7 @@ adicionarAutomovel: #recebe em $a0 o numero do apartamento
 						lw $t9, 56($sp)
 					#final da chamada das funções strncpy
 					
+					lb $t2 1($t0)
 					bnez $t2, incrementarValores #se o número de moradores for zero
 					lb $t2, 2($t0) #carrega em $t2 o número de carros
 					bnez $t2, incrementarValores #se o número de carros for zero
@@ -939,57 +1512,254 @@ formatar: #carrega no registrador $a0 o número de apartamentos da estrutura
 		jr $ra #volta para a main
 
 
+reconhecerComando:
+    la $t0, buffer       # Carrega o endereço do buffer
 
+	#Verifica o primeiro caractere para determinar a operação
+    	lb $t1, 0($t0)
+
+	    beq $t1, 'a', verifica_ad    # a = adicionar
+	    beq $t1, 'r', verifica_rm    # r = remover ou recarregar
+	    beq $t1, 'l', op_limpar      # l = limpar
+	    beq $t1, 'i', op_info        # i = info
+	    beq $t1, 's', op_salvar      # s = salvar
+	    beq $t1, 'f', op_formatar    # f = formatar
+
+    		jr $ra                       # Retorna se não reconhecer
+
+	verifica_ad:
+    		lb $t1, 3($t0)               # Verifica o 4º caractere
+    		beq $t1, 'm', op_ad_morador  # ad_morador
+    		beq $t1, 'a', op_ad_auto     # ad_auto
+    		jr $ra
+
+	verifica_rm:
+	#	lb $t1, 1($t0)
+	#	beq $t1, 'e', op_recarregar  #verifica o segundo caractere
+						 #recarregar
+		
+    		lb $t1, 3($t0)               # Verifica o 4º caractere
+    		beq $t1, 'm', op_rm_morador  # rm_morador
+    		beq $t1, 'a', op_rm_auto     # rm_auto
+    		jr $ra
+
+	op_ad_morador: #operação id1
+    		li $v0, 1
+    		
+    		jr $ra
+
+	op_rm_morador: #operação id2
+    		li $v0, 2
+    		
+    		jr $ra
+    		
+	op_ad_auto: #operação id3
+    		li $v0, 3
+    		
+    		jr $ra
+
+	op_rm_auto: #operação id4
+		li $v0, 4
+    		
+    		jr $ra
+
+	op_limpar: #operação id5
+    		li $v0, 5
+    		
+    		jr $ra
+
+	op_info: #operação id6
+		lb $t1, 5($t0)
+		
+		beq $t1, 'g', op_infoGeral 
+		
+    		li $v0, 6
+   		
+    		jr $ra
+    		
+    	op_infoGeral: #operação id7
+    		li $v0, 7
+    		
+    		jr $ra
+
+	op_salvar: #operação id8
+    		li $v0, 8
+    		
+    		jr $ra
+    		
+    	op_formatar: #operação id9
+    		li $v0, 9
+    		
+    		jr $ra
 
 main: #onde a chamada das opera��es e intera��o com o usuario ocorrem
 	lui $s0, 0x00001001
-	ori $s0, 0x00000190
+	ori $s0, 0x00000320
 	
-	lui $s7, 0x00001001
-	ori $s7, 0x00000120
-
+	lui $s1, 0x00001001
+	ori $s1, 0x0000190
+	
 	addi $a0, $s0, 0
-	addi $a1, $0, 6
+	addi $a1, $0, 40
 	jal formatar
 	
-	la $s1, nome1
-	la $s2, nome2
-	la $s3, nome3
-	la $s4, nome4
-	la $s5, nome5
-	la $s6, nome6
+	continuarFuncionamento:
 	
-	addi $a0, $0, 1
-	add $a1, $s1, $0
-	jal adicionarMorador
+	# Solicita o comando
+       	li $v0, 4
+       	la $a0, pedido
+       	syscall
+
+    	# Lê o comando do usuário
+    		li $v0, 8
+    		la $a0, buffer
+    		li $a1, 150
+    		syscall
+
+    	# Chama a função de reconhecimento
+    		jal reconhecerComando
+    		
+    		beq $v0, 1, opAdicionarMorador
+    		beq $v0, 2, opRemoverMorador
+    		beq $v0, 3, opAdicionarVeiculo
+    		beq $v0, 4, opRemoverVeiculo
+    		beq $v0, 5, opLimpar
+    		beq $v0, 6, opInfoApartamento
+    		beq $v0, 7, opInfoGeral
+    		#beq $v0, 8, opSalvar
+    		beq $v0, 9, opFormatar
+    		
+    		opAdicionarMorador:
+    		
+    			la $s2, buffer
+    		
+    			add $a0, $s2, $0
+    			jal reconhecerStringComandos
+    		
+    			bne $v0, 2, comandoInvalidoMain
+    			bnez $v1, comandoInvalidoMain
+    		
+    			la $a0, espacoComando1
+    			la $a1, espacoComando2
+    			jal adicionarMorador
+    			
+    			j continuarFuncionamento
+    		
+    		opRemoverMorador: 
+    		  			
+    		       la $s2, buffer
+    		       
+    			add $a0, $s2, $0
+    			jal reconhecerStringComandos
+    		
+    			bne $v0, 2, comandoInvalidoMain
+    			bnez $v1, comandoInvalidoMain
+    		
+    			la $a0, espacoComando1
+    			la $a1, espacoComando2
+    			jal removerMorador
+    			
+    			j continuarFuncionamento
+    		
+    		opAdicionarVeiculo:
+    		   	la $s2, buffer
+    		
+    			add $a0, $s2, $0
+    			jal reconhecerStringComandos
+    		
+    			bne $v0, 4, comandoInvalidoMain
+    			bnez $v1, comandoInvalidoMain
+    		
+    			la $a0, espacoComando1
+    			la $a1, espacoComando2
+    			la $a2, espacoComando3
+    			la $a3, espacoComando4
+    			jal adicionarAutomovel
+    			
+    			j continuarFuncionamento
+    		
+    		opRemoverVeiculo:
+    		       la $s2, buffer 
+    		
+    			add $a0, $s2, $0
+    			jal reconhecerStringComandos
+    		
+    			bne $v0, 4, comandoInvalidoMain
+    			bnez $v1, comandoInvalidoMain
+    		
+    			la $a0, espacoComando1
+    			la $a1, espacoComando2
+    			la $a2, espacoComando3
+    			la $a3, espacoComando4
+    			jal removerAutomovel
+    			
+    			j continuarFuncionamento
+    		
+    		opLimpar:
+    		       la $s2, buffer
+    		
+    			add $a0, $s2, $0
+    			jal reconhecerStringComandos
+    		
+    			bne $v0, 1, comandoInvalidoMain
+    			bnez $v1, comandoInvalidoMain
+    		
+    			la $a0, espacoComando1
+    			jal limpar
+    			
+    			j continuarFuncionamento
+    		
+    		opInfoApartamento:
+    		    	la $s2, buffer
+    		
+    			add $a0, $s2, $0
+    			jal reconhecerStringComandos
+    		
+    			bne $v0, 1, comandoInvalidoMain
+    			bnez $v1, comandoInvalidoMain
+    		
+    			la $a0, espacoComando1
+    			jal infoApartamento
+    			
+    			j continuarFuncionamento
+    		
+    		opInfoGeral:
+    			
+    			jal infoGeral
+    			
+    			j continuarFuncionamento
+    			
+    		opFormatar:
+    			jal formatar
+    			
+    			j continuarFuncionamento
+    		
+    #		opSalvar:
+    #		
+    #			jal salvar
+    #			
+    #			j continuarFuncionamento
+    #			
+    #		opRecarregar:
+    #		 	jal recarregar
+    #		 	
+    #		 	j continuarFuncionamento
+    #		
+    		comandoInvalidoMain:
+    			li $v0, 4
+       		la $a0, pedido
+       		syscall
+       		
+       		li $v0, 4
+       		la $a0, comandoInvalido
+       		syscall
+    			
+    		
+    		finalizarIdentificacaoDeComandos:
+    		j continuarFuncionamento
+
+    	# Encerra o programa
+    		li $v0, 10
+    		syscall
 	
-	addi $a0, $0, 1
-	add $a1, $s1, $0
-	jal removerMorador
-	
-	addi $a0, $0, 2
-	add $a1, $s2, $0
-	jal adicionarMorador
-		
-	addi $a0, $0, 3
-	add $a1, $s3, $0
-	jal adicionarMorador
-	
-	addi $a0, $0, 2
-	add $a1, $s2, $0
-	jal removerMorador
-	
-	addi $a0, $0, 4
-	add $a1, $s4, $0
-	jal adicionarMorador	
-	
-	addi $a0, $0, 5
-	add $a1, $s5, $0
-	jal adicionarMorador	
-	
-	addi $a0, $0, 3
-	add $a1, $s3, $0
-	jal removerMorador
-	
-		
 	
