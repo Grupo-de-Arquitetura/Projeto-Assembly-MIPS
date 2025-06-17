@@ -14,8 +14,8 @@ tipo1: .asciiz "m"
 modelo1: .asciiz "Toyota"
 cor1: .asciiz "Vermelho"
 
-tipo2: .asciiz "m"
-modelo2: .asciiz "Yamaha"
+tipo2: .asciiz "c"
+modelo2: .asciiz "Honda"
 cor2: .asciiz "Azul"
 
 tipo3: .asciiz "m"
@@ -394,15 +394,27 @@ adicionarAutomovel: #recebe em $a0 o numero do apartamento
 	add $t9, $0, $0  #registrador $t9 será auxiliar para o funcionamento da função
 	
 	beq $t4, 1, erroAdicionarAutomovel #verifica se há um carro no apartamento
-		lb $t8, 
-		beq $t5, 2, erroAdicionarAutomovel #verifica se há duas motos no apartamento
-			lb $t8, 0($t1) #carrega o caractere tipo de veículo que deve adicionar
+		lb $t8, 0($t1) #carrega o caractere tipo de veículo que deve adicionar
+		
+		beq $t8, 99, verifiqueDisponibilidadeCarro  #se for um carro verifique se há uma moto
+							         #senão verifique se pode adicionar uma moto
+			j verifiqueMoto		    
 			
-			beq $t8, 99, adicionarVeiculoPosicao1  #se for um carro adicione
-								    #senão verifique se é uma moto
+		verifiqueDisponibilidadeCarro:
+			lb $t9, 3($t0)                   #carrega o número de motos no apartamento
+			bnez $t9, erroAdicionarAutomovel #se o número de motos for diferente de zero
+							     #adicione o carro
+							     #senão retorne exceção 2
+		
+			j adicionarVeiculoPosicao1
+		
+		verifiqueMoto:
+			
+			beq $t5, 2, erroAdicionarAutomovel #verifica se há duas motos no apartamento
 			beq $t8, 109, adicionarVeiculoPosicao1 #se for uma moto adicione
-								    #senão mande erro (exceção 2)
-				j erroAdicionarAutomovel
+							           #senão retorne exceção 3
+			
+				j tipoInvalidoAdicionar
 			adicionarVeiculoPosicao1:
 				beq $t6, 0, adicioneVeiculoPosicao
 					addi $t7, $t7, 33 #adiciona veiculo na posicao 2
@@ -462,6 +474,10 @@ adicionarAutomovel: #recebe em $a0 o numero do apartamento
 					#final da chamada das funções strncpy
 					
 					j incrementarValores
+	
+	tipoInvalidoAdicionar:
+		addi $v1, $0, 3 #carrega o valor 3 em $v1 (exceção 3)
+		j finalizarAdicionarAutomovel
 	
 	erroAdicionarAutomovel:
 		addi $v1, $0, 2 #carrega o valor 2 em $v1 (exceção 2)
