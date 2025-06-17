@@ -7,6 +7,21 @@ nome4: .asciiz "Marconi"
 nome5: .asciiz "Vera"
 nome6: .asciiz "Paulo"
 
+certo: .asciiz "Certo"
+errado: .asciiz "Errado"
+
+tipo1: .asciiz "m"
+modelo1: .asciiz "Toyota"
+cor1: .asciiz "Vermelho"
+
+tipo2: .asciiz "m"
+modelo2: .asciiz "Yamaha"
+cor2: .asciiz "Azul"
+
+tipo3: .asciiz "m"
+modelo3: .asciiz "Honda"
+cor3: .asciiz "Verde"
+
 .text
 
 j main
@@ -76,8 +91,274 @@ strcmp: #recebe em $a0 e $a1 os endere�os para a compara��o de strings
 	
 		add $v0, $t4, $0  	     #carrega o valor da compara��o em $v0 (retorno)
 		jr $ra           	     #volta para a main
-	
 
+buscarVeiculo: #recebe em $a0 o endereço da lista de veiculos
+		 #recebe em $a1 o endereço do caractere do tipo do veiculo
+		 #recebe em $a2 o endereço da string modelo do veiculo
+		 #recebe em $a3 o endereço da string cor do veiculo
+		 
+	add $t0, $a0, $0 #registra em $t0 o endereço da lista de veiculos
+	lb $t1, 0($a1)   #carrega em $t1 o caractere do tipo do veiculo
+	add $t2, $a2, $0 #registra em $t2 o endereço do modelo do veiculo
+	add $t3, $a3, $0 #registra em $t3 o endereço do cor do veiculo
+	add $t4, $0, $0  #registrador $t4 é auxiliar para o funcionamento da função
+	add $t5, $0, $0  #registrador $t5 é auxiliar para o funcionamento da função
+	
+	lb $t5, -256($t0)
+	addi $t4, $t5, -1  #carrega o valor 1 em $t4 (contador)
+			
+	j iniciarBuscarVeiculo
+		
+	repetirBuscarVeiculo:
+		beqz $t4, finalizarBuscarVeiculo #verifica se o contador é igual a zero
+							#retorne exceção 1
+		addi $t4, $t4, -1 #decremente contador
+		addi $t0, $t0, 33 #registre a próxima posição da lista de veiculos em $t5
+				
+	iniciarBuscarVeiculo:
+		
+		lb $t5, 0($t0) #carrega o tipo do veiculo avaliado
+		bne $t1, $t5, repetirBuscarVeiculo #se o tipo dos veiculos for diferente volte para o começo
+			
+		#inicio da chamada das funções strcmp
+			
+			addi $sp, $sp, -44
+			sw $ra, 0($sp)
+			sw $a0, 4($sp)
+			sw $a1, 8($sp)
+			sw $a2, 12($sp)
+			sw $a3, 16($sp)
+			sw $t0, 20($sp)
+			sw $t1, 24($sp)
+			sw $t2, 28($sp)
+			sw $t3, 32($sp)
+			sw $t4, 36($sp)
+			sw $t5, 40($sp)
+				
+				addi $a0, $t5, 1 #registra o endereço do modelo do veiculo avaliado
+				add $a1, $t2, $0 #registra o endereço do modelo do veiculo procurado
+				jal strcmp       #verifica se a modelo do veiculo avaliado é igual ao procurado
+				bnez $v0, naoEncontrou #se os modelos forem diferentes volte para o começo
+			
+				lw $t3, 32($sp)   #recupera o valor de $t3 do stack pointer
+				lw $t5, 40($sp)   #recupera o valor de $t5 do stack pointer
+			
+				addi $a0, $t5, 22 #registra o endereço da cor do veiculo avaliado
+				add $a1, $t3, $0  #registra o endereço da cor do veiculo procurado
+				jal strcmp        #verifica se a cor do veiculo avaliado é igual ao procurado
+				bnez $v0, naoEncontrou #se os modelos forem diferentes volte para o começo
+				
+				j encontrou
+				
+				naoEncontrou:
+					addi $v1, $0, 1 #não foi encontrado o veiculo (exceção 1)
+					j terminarBuscarVeiculo
+			
+				encontrou:
+					add $v1, $0, $0 #o veículo foi encontrado, não há exceção
+				
+				terminarBuscarVeiculo:
+				
+			lw $ra, 0($sp)
+			lw $a0, 4($sp)
+			lw $a1, 8($sp)
+			lw $a2, 12($sp)
+			lw $a3, 16($sp)
+			lw $t0, 20($sp)
+			lw $t1, 24($sp)
+			lw $t2, 28($sp)
+			lw $t3, 32($sp)
+			lw $t4, 36($sp)
+			lw $t5, 40($sp)
+			addi $sp, $sp, 44
+		#final da chamada das funções strcmp
+			
+		bnez $v1, repetirBuscarVeiculo #se as cores forem diferentes volte para o começo
+		
+	finalizarBuscarVeiculo:
+		jr $ra
+
+
+removerAutomovel: #recebe em $a0 o numero do apartamento
+		    #recebe em $a1 o endereço do caractere do tipo do veiculo
+		    #recebe em $a2 o endereço da string modelo do veiculo
+		    #recebe em $a3 o endereço da string cor do veiculo
+		    
+	#início da chamada da função buscar
+		addi $sp, $sp, -12
+		sw $ra, 0($sp)
+		sw $a0, 4($sp)
+		sw $a1, 8($sp)
+	
+		add $a0, $a0, $0 #carrega em $a0 o número do apartamento a ser encontrado
+		jal buscar       #retorna em $v0 o endereço do apartamento com este número
+	
+		lw $ra, 0($sp)
+		lw $a0, 4($sp)
+		lw $a1, 8($sp)	  
+		addi $sp, $sp, 12
+	#final da chamada da função buscar
+	
+	beq $v1, 1, erroApartamentoNaoEncontrado
+	
+	add $t0, $v0, $0 #registra em $t0 o endereço do apartamento
+	add $t1, $a1, $0 #registra em $t1 o endereço do tipo do veiculo
+	add $t2, $a2, $0 #registra em $t2 o endereço da string modelo do veiculo
+	add $t3, $a3, $0 #registra em $t3 o endereço da string cor do veiculo
+	lb  $t4, 4($t0)  #carrega em $t4 o número de veiculos adicionados no apartamento
+	addi $t5, $v0, 260  #registra o endereço da lista de automoveis do apartamento
+	add $t6, $0, $0  #registrador $t6 é auxiliar para o funcionamento da função
+	add $t7, $0, $0  #registrador $t7 é auxiliar para o funcionamento da função
+	
+	lb $t6, 0($t1)  		#carrega em $t6 o tipo do veículo
+	
+	beq $t6, 99, busqueVeiculo  #se o tipo do veiculo for um carro
+					#realize a busca
+	beq $t6, 109, busqueVeiculo #se o tipo do veiculo for uma moto
+					#realize a busca
+					#senão retorne exceção 3
+					
+		j erroTipoInvalido
+		
+	busqueVeiculo:
+	
+		#inicio da chamada da função strcmp
+			addi $sp, $sp, -52
+			sw $ra, 0($sp)
+			sw $a0, 4($sp)
+			sw $a1, 8($sp)
+			sw $a2, 12($sp)
+			sw $a3, 16($sp)
+			sw $t0, 20($sp)
+			sw $t1, 24($sp)
+			sw $t2, 28($sp)
+			sw $t3, 32($sp)
+			sw $t4, 36($sp)
+			sw $t5, 40($sp)
+			sw $t6, 44($sp)
+			sw $t7, 48($sp)
+			
+			add $a0, $t5, $0
+			add $a1, $a1, $0
+			add $a2, $a2, $0
+			add $a3, $a3, $0
+			
+			jal buscarVeiculo
+				 
+			lw $ra, 0($sp)
+			lw $a0, 4($sp)
+			lw $a1, 8($sp)
+			lw $a2, 12($sp)
+			lw $a3, 16($sp)
+			lw $t0, 20($sp)
+			lw $t1, 24($sp)
+			lw $t2, 28($sp)
+			lw $t3, 32($sp)
+			lw $t4, 36($sp)
+			lw $t5, 40($sp)
+			lw $t6, 44($sp)
+			lw $t7, 48($sp)
+			addi $sp, $sp, 52
+		#final da chamada da função strcmp
+		
+		beq $v1, 1, erroVeiculoNaoEncontrado
+			add $t6, $v0, $0
+		
+		beq $t5, $t6, removerPosicao1
+			removerUltimaPosicao:
+			beq $t6, 109, decrementarMotos
+				j decrementarCarros
+			
+		removerPosicao1:
+			lb $t7 , 4($t0)
+			beq $t7, 1, removerUltimaPosicao
+			
+			lb $t6, 33($t5)
+			sb $t6, 0($t5)
+			
+			addi $t5, $t5, 1
+			addi $t6, $t5, 33
+			
+			#inicio da chamada das funções strcpy
+				addi $sp, $sp, -52
+				sw $ra, 0($sp)
+				sw $a0, 4($sp)
+				sw $a1, 8($sp)
+				sw $a2, 12($sp)
+				sw $a3, 16($sp)
+				sw $t0, 20($sp)
+				sw $t1, 24($sp)
+				sw $t2, 28($sp)
+				sw $t3, 32($sp)
+				sw $t4, 36($sp)
+				sw $t5, 40($sp)
+				sw $t6, 44($sp)
+				sw $t7, 48($sp)
+			
+				add $a0, $t5, $0
+				add $a1, $t6, $0
+				addi $a2, $0, 21
+				jal strncpy      #copia a string modelo da posição 2 na posição 1
+				
+				lw $t5, 40($sp)
+				lw $t6, 44($sp)
+				
+				addi $t5, $t5, 21
+				addi $t6, $t5, 33
+				addi $a2, $0, 11
+				jal strncpy      #copia a string cor da posiçao 2 na posição 1
+			
+				lw $ra, 0($sp)
+				lw $a0, 4($sp)
+				lw $a1, 8($sp)
+				lw $a2, 12($sp)
+				lw $a3, 16($sp)
+				lw $t0, 20($sp)
+				lw $t1, 24($sp)
+				lw $t2, 28($sp)
+				lw $t3, 32($sp)
+				lw $t4, 36($sp)
+				lw $t5, 40($sp)
+				lw $t6, 44($sp)
+				lw $t7, 48($sp)
+				addi $sp, $sp, 52
+			#final da chamada das funções strcpy
+			
+			lb $t6, 0($t2)
+			beq $t6, 109, decrementarMotos
+				decrementarCarros:
+					lb $t6, 2($t0)
+					addi $t6, $t6, -1
+					sb $t6, 2($t0)
+					j decrementarVeiculos
+			
+			decrementarMotos:
+				lb $t6, 3($t0)
+				addi $t6, $t6, -1
+				sb $t6, 3($t0)
+			
+			decrementarVeiculos:
+				lb $t6, 4($t0)
+				addi $t6, $t6, -1
+				sb $t6, 4($t0)
+				
+				add $v1, $0, $0
+				
+				j finalizarRemoverAutomovel
+			
+	erroTipoInvalido:
+		addi $v1, $0, 3 #carrega o valor 2 no registrador $v1 (exceção 3)
+		j finalizarRemoverAutomovel
+		
+	erroVeiculoNaoEncontrado:
+		addi $v1, $0, 2 #carrega o valor 2 no registrador $v1 (exceção 2)
+		j finalizarRemoverAutomovel
+	
+	erroApartamentoNaoEncontrado:
+		addi $v1, $0, 1 #carrega o valor 1 no registrador $v1 (exceção 1)
+
+	finalizarRemoverAutomovel:
+		jr $ra
 
 adicionarAutomovel: #recebe em $a0 o numero do apartamento
 		      #recebe em $a1 o endereço do tipo do veiculo
@@ -99,6 +380,8 @@ adicionarAutomovel: #recebe em $a0 o numero do apartamento
 		addi $sp, $sp, 12
 	#final da chamada da função buscar
 	
+	beq $v1, 1, erroApartamentoNaoEncontradoAdicionarAutomovel #verifica se foi encontrado o apartamento
+	
 	add $t0, $v0, $0 #registra em $t0 o endereço do apartamento
 	add $t1, $a1, $0 #registra em $t1 o endereço do tipo do veiculo
 	add $t2, $a2, $0 #registra em $t2 o endereço do modelo do veiculo
@@ -106,45 +389,108 @@ adicionarAutomovel: #recebe em $a0 o numero do apartamento
 	lb  $t4, 2($t0)  #carrega em $t4 o número atual de carros no apartamento
 	lb  $t5, 3($t0)  #carrega em $t5 o numero atual de motos no apartamento
 	lb  $t6, 4($t0)  #carrega em $t6 o numero atual de veiculos no apartamento
-	add $t7, 260($t0)#registra em $t7 o endereço da lista de veiculos
+	addi $t7, $t0, 260 #registra em $t7 o endereço da lista de veiculos
 	add $t8, $0, $0  #registrador $t8 será auxiliar para o funcionamento da função
 	add $t9, $0, $0  #registrador $t9 será auxiliar para o funcionamento da função
 	
-	beq $t2, 1, finalizarAdicionarAutomovel
-		beq $t3, 2, finalizarAdicionarAutomovel
-			lb $t8, 0($t1)
+	beq $t4, 1, erroAdicionarAutomovel #verifica se há um carro no apartamento
+		lb $t8, 
+		beq $t5, 2, erroAdicionarAutomovel #verifica se há duas motos no apartamento
+			lb $t8, 0($t1) #carrega o caractere tipo de veículo que deve adicionar
 			
-			beq $t8, 99, adicionarCarro
-				beq $t5, 1, adicionarMotoPosicao2
-					addi $sp, $sp, -60
-					sw $ra, 0($sp)
-					sw $a0, 4($sp)
-					sw $a1, 8($sp)
-					sw $a2, 12($sp)
-					sw $a3, 16($sp)
-					sw $t0, 20($sp)
-					sw $t1, 24($sp)
-					sw $t2, 28($sp)
-					sw $t3, 32($sp)
-					sw $t4, 36($sp)
-					sw $t5, 40($sp)
-					sw $t6, 44($sp)
-					sw $t7, 48($sp)
-					sw $t8, 52($sp)
-					sw $t9, 56($sp)
+			beq $t8, 99, adicionarVeiculoPosicao1  #se for um carro adicione
+								    #senão verifique se é uma moto
+			beq $t8, 109, adicionarVeiculoPosicao1 #se for uma moto adicione
+								    #senão mande erro (exceção 2)
+				j erroAdicionarAutomovel
+			adicionarVeiculoPosicao1:
+				beq $t6, 0, adicioneVeiculoPosicao
+					addi $t7, $t7, 33 #adiciona veiculo na posicao 2
+				adicioneVeiculoPosicao:
+					#inicio da chamada das funções strncpy
+						addi $sp, $sp, -60
+						sw $ra, 0($sp)
+						sw $a0, 4($sp)
+						sw $a1, 8($sp)
+						sw $a2, 12($sp)
+						sw $a3, 16($sp)
+						sw $t0, 20($sp)
+						sw $t1, 24($sp)
+						sw $t2, 28($sp)
+						sw $t3, 32($sp)
+						sw $t4, 36($sp)
+						sw $t5, 40($sp)
+						sw $t6, 44($sp)
+						sw $t7, 48($sp)
+						sw $t8, 52($sp)
+						sw $t9, 56($sp)
 					
-					lb $t9, 0($t1)
+						lb $t1, 0($t1) #carrega o caractere tipo do veiculo em $t1
+						sb $t1, 0($t7) #carrega o caractere em $t1 no endereço em $t7
+						
+						lw $t2, 28($sp)
+						lw $t7, 48($sp)
+						
+						addi $a0, $t7, 1 #registra em $a0 o endereço de destino da string
+						add $a1, $t2, $0 #registra em $t2 o endereço da string modelo
+						addi $a2, $0, 21 #carrega o número máximo de caracteres a serem copiados
+						jal strncpy      #copia a string do modelo do veiculo
 					
-				adicionarMotoPosicao2:
-					addi $t7, $t7, 33
-			adicionarCarro:
+						lw $t3, 32($sp)
+						lw $t7, 48($sp)
+					
+						addi $a0, $t7, 22 #registra em $a0 o endereço de destino da string
+						add $a1, $t3, $0  #registra em $a1 o endereço da string cor
+						addi $a2, $0, 11  #carrega o número máximo de caracteres a serem copiados
+						jal strncpy       #copia a string da cor do veiculo
+					
+						lw $ra, 0($sp)
+						lw $a0, 4($sp)
+						lw $a1, 8($sp)
+						lw $a2, 12($sp)
+						lw $a3, 16($sp)
+						lw $t0, 20($sp)
+						lw $t1, 24($sp)
+						lw $t2, 28($sp)
+						lw $t3, 32($sp)
+						lw $t4, 36($sp)
+						lw $t5, 40($sp)
+						lw $t6, 44($sp)
+						lw $t7, 48($sp)
+						lw $t8, 52($sp)
+						lw $t9, 56($sp)
+					#final da chamada das funções strncpy
+					
+					j incrementarValores
 	
+	erroAdicionarAutomovel:
+		addi $v1, $0, 2 #carrega o valor 2 em $v1 (exceção 2)
+		j finalizarAdicionarAutomovel
+	
+	erroApartamentoNaoEncontradoAdicionarAutomovel:
+		addi $v1, $0, 1 #carrega o valor 1 em $v1 (exceção 1)
+		j finalizarAdicionarAutomovel
+	
+	incrementarValores:
+		lb $t8, 0($t1)
+		beq $t8, 109, incrementarMotos
+			lb $t9, 2($t0)
+			addi $t9, $t9, 1
+			sb $t9, 2($t0)
+			
+			j incrementarVeiculos
+		incrementarMotos:
+			lb $t9, 3($t0)
+			addi $t9, $t9, 1
+			sb $t9, 3($t0)
+			
+		incrementarVeiculos:
+			lb $t9, 4($t0)
+			addi $t9, $t9, 1
+			sb $t9, 4($t0)
+			
 	finalizarAdicionarAutomovel:
 		jr $ra
-
-removerAutomovel:
-
-	finalizarRemoverAutomovel:
 
 removerMorador: #recebe em $a0 o numero do apartamento
 		  #recebe em $a1 o endereço do nome do morador a ser removido
@@ -164,16 +510,21 @@ removerMorador: #recebe em $a0 o numero do apartamento
 		addi $sp, $sp, 12
 	#final da chamada da função buscar
 	
+	beq $v1, 1, erroApartamentoNaoEncontradoRemoverMorador
+	
 	addi $t0, $v0, 5 #registra em $t0 o endereço 0 da lista de nomes do apartamento
 	add $t1, $a1, $0 #registra em $t1 o endereço do nome a ser removido
 	lb $t2, 1($v0)   #carrega em $t2 o número de moradores no apartamento
 	add $t3, $0, $0  #registrador $t3 é auxiliar para o funcionamento da função
+	add $t4, $0, $0  #registrador $t3 é auxiliar para o funcionamento da função
 	
+	add $t3, $t2, $0
+	add $t4, $t0, $0
 	repetirProcurarMorador:
-		beqz $t2, finalizarRemoverMorador
+		beqz $t3, erroMoradorNaoEncontrado
 		
 		#inicio da chamada da função strcmp
-			addi $sp, $sp, -28
+			addi $sp, $sp, -32
 			sw $ra, 0($sp)
 			sw $a0, 4($sp)
 			sw $a1, 8($sp)
@@ -181,6 +532,7 @@ removerMorador: #recebe em $a0 o numero do apartamento
 			sw $t1, 16($sp)
 			sw $t2, 20($sp)
 			sw $t3, 24($sp)
+			sw $t4, 28($sp)
 			
 			add $a0, $t0, $0 #registra em $a0 o endereço da primeira string
 			add $a1, $t1, $0 #registra em $a1 o endereço da segunda string
@@ -193,16 +545,17 @@ removerMorador: #recebe em $a0 o numero do apartamento
 			lw $t1, 16($sp)
 			lw $t2, 20($sp)
 			lw $t3, 24($sp)
-			addi $sp, $sp, 28
+			lw $t4, 28($sp)
+			addi $sp, $sp, 32
 		#final da chamada da função strcmp
 		
 		beqz $v0, reescreverMorador
-			addi $t0, $t0, 51 #registra a próxima posição da lista de nomes
-			addi $t2, $t2, -1 #decrementa o número de moradores a serem avaliados
+			addi $t4, $t4, 51 #registra a próxima posição da lista de nomes
+			addi $t3, $t3, -1 #decrementa o número de moradores a serem avaliados
 			j repetirProcurarMorador 
 	
 	reescreverMorador:
-		lb $t3, -1($t0)
+		add $t3, $t2, $0
 		beq $t3, 1, limparApartamento
 		add $t3, $t0, $0 #registra o endereço do nome do morador encontrado
 		
@@ -214,7 +567,7 @@ removerMorador: #recebe em $a0 o numero do apartamento
 		
 		encontrouUltimoElemento:
 			#inicio da chamada da função strcpy
-				addi $sp, $sp, -28
+				addi $sp, $sp, -32
 				sw $ra, 0($sp)
 				sw $a0, 4($sp)
 				sw $a1, 8($sp)
@@ -222,6 +575,7 @@ removerMorador: #recebe em $a0 o numero do apartamento
 				sw $t1, 16($sp)
 				sw $t2, 20($sp)
 				sw $t3, 24($sp)
+				sw $t4, 28($sp)
 			
 				add $a0, $t0, $0 #registra em $a0 o endereço da primeira string
 				add $a1, $t3, $0 #registra em $a1 o endereço da segunda string
@@ -235,12 +589,18 @@ removerMorador: #recebe em $a0 o numero do apartamento
 				lw $t1, 16($sp)
 				lw $t2, 20($sp)
 				lw $t3, 24($sp)
-				addi $sp, $sp, 28
+				lw $t4, 28($sp)
+				addi $sp, $sp, 32
 			#final da chamada da função strcpy
 			
+			add $v1, $0, $0 #carrega o valor 0 em $v1 (não houve exceção)
+			lb $t0, -4($t4)
+			addi $t0, $t0, -1
+			sb $t0, -4($t4)
 			j finalizarRemoverMorador
 	
 	limparApartamento:
+	#inicio da chamada da função limpar
 		addi $sp, $sp, -28
 		sw $ra, 0($sp)
 		sw $a0, 4($sp)
@@ -261,6 +621,17 @@ removerMorador: #recebe em $a0 o numero do apartamento
 		lw $t2, 20($sp)
 		lw $t3, 24($sp)
 		addi $sp, $sp, 28
+	#fim da chamada da função limpar
+	
+		add $v1, $0, $0 #carrega o valor 0 em $v1 (não houve exceção)
+		j finalizarRemoverMorador
+		
+	erroApartamentoNaoEncontradoRemoverMorador:
+		addi $v1, $0, 1 #carrega o valor 1 em $v1 (exceção 1)
+		j finalizarRemoverMorador
+		
+	erroMoradorNaoEncontrado:
+		addi $v1, $0, 2 #carrega o valor 2 em $v1 (exceção 2)
 			
 	finalizarRemoverMorador:
 		jr $ra
@@ -275,14 +646,16 @@ adicionarMorador: #recebe em $a0 o numero do apartamento
        	sw $a1, 8($sp)     #armazena o parâmetro $a1 no stack pointer
        	
        	add $a0, $a0, $0   #carrega o número do apartamento a ser buscado
-       	
        	jal buscar #retorna em $v0 o endereço do apartamento a ser buscado
+       		    #caso não seja encontrado o apartamento retorna o valor 1 em $v1
        	
        	lw $ra, 0($sp)     #recupera o endereço de retorno do stack
        	lw $a0, 4($sp)
        	lw $a1, 8($sp)
        	addi $sp, $sp, 12  #libera espaço no stack pointer
        #final da chamada da função buscar
+       
+       beq $v1, 1, erroAoAdicionarMorador
        
 	add $t0, $v0, $0 #registra em $t0 o endereço do apartamento
 	add $t1, $a1, $0 #registra em $t1 o endereço da string nome
@@ -294,7 +667,7 @@ adicionarMorador: #recebe em $a0 o numero do apartamento
 	slti $t4, $t2, 5 #se o número atual de moradores for menor que 5 carrega 1 em $t4
 			   #senão carrega 0 em $t4
 	
-	beqz $t4, finalizarAdicionarMorador #se o valor carregado em $t4 for zero encerre a função
+	beqz $t4, erroMaximoNumeroDeMoradores #se o valor carregado em $t4 for zero encerre a função
 						 #senão adicione o nome do morador a lista
 		add $t4, $t2, $0 #carrega em $t4 o número de posições ocupadas na lista de moradores
 		add $t5, $t3, $0 #registra em $t5 o endereço da posição zero do array de moradores
@@ -338,15 +711,26 @@ adicionarMorador: #recebe em $a0 o numero do apartamento
 		#fim da chamada da função strncpy
 		
 		addi $t2, $t2, 1 #incrementa o número de moradores no apartamento
-		sw $t2, 1($t0)   #carrega no apartamento o número de moradores incrementado
+		sb $t2, 1($t0)   #carrega no apartamento o número de moradores incrementado
+		
+		add $v1, $0, $0  #retorna zero em $v1 (não houve exceção)
+		j finalizarAdicionarMorador
+	
+	erroMaximoNumeroDeMoradores:
+		addi $v1, $0, 2 #carrega 2 em $v1 (exceção 2)
+		
+	erroAoAdicionarMorador:
+		addi $v1, $0, 1 #carrega 1 em $v1 (exceção 1)
 	finalizarAdicionarMorador:
 		jr $ra           #volta para a main
 
+
+
 buscar: #recebe no registrador $a0 o numero do apartamento a ser encontrado
 	 #caso seja encontrado, retorna o endereço do apartamento
-	 #caso n�o seja encontrado, ele retorna a posição nula da estrutura (exce��o)
+	 #caso n�o seja encontrado, ele retorna o valor 1 no registrador $v1(exce��o)
 	
-	addi $t0, $s0, 3 #registra em $t0 o endere�o do primeiro apartamento da estrutura
+	addi $t0, $s0, 2 #registra em $t0 o endere�o do primeiro apartamento da estrutura
 			   #subsequentemente ele regista o endere�o dos apartamentos atualmente sendo avaliados
 			   
 	add $t1, $a0, $0 #registra em $t1 o n�mero do apartamento a ser encontrado
@@ -361,7 +745,7 @@ buscar: #recebe no registrador $a0 o numero do apartamento a ser encontrado
 						        #sen�o v� para a primeira posi��o do pr�ximo apartamento
 						 
 		beq $t3, $t2, retornarNaoEncontrado #se o n�mero do apartamento atual for igual ao numero de apartamentos da estrutura 
-						        #retorne o endereço nulo da estrutura
+						        #houve uma exceção
 						 
 			addi $t0, $t0, 326 #registra em $t0 a posi��o do pr�ximo apartamento
 			lb $t3, 0($t0)     #registra o n�mero do apartamento atualmente sendo avaliado
@@ -371,14 +755,18 @@ buscar: #recebe no registrador $a0 o numero do apartamento a ser encontrado
 		
 	retornarEncontrado:
 		addi $v0, $t0, 0 #registra o endereço do apartamento encontrado em $v0
-		jr $ra           #volta para a main
+		add $v1, $0, $0  #carrega zero no $v1 (não houve exceção)
+		j finalizarBuscar
 		
 	retornarNaoEncontrado:
-		addi $v0, $a0, 2 #registra em $v0 o endereço nulo da estrutura
-		jr $ra           #volta para a main
+		addi $v1, $0, 1 #carrega no $v1 o valor 1 (exceção)
+		
+	finalizarBuscar:
+		jr $ra          #volta para a main
 
 
 limpar: #recebe em $a0 o n�mero do apartamento para torna-lo vazio
+	 #caso o apartamento não exista, retorna o valor 1 em $v1
 
 	 #inicio da chamada da fun��o buscar
 	
@@ -397,23 +785,32 @@ limpar: #recebe em $a0 o n�mero do apartamento para torna-lo vazio
 	
 	#fim da chamada da fun��o buscar
 	
+	beq $v1, 1, erroAoLimpar #confere se foi encontrado um apartamento com o número recebdo
+	
 	addi $t0, $v0, 0 #registra em #t0 o valor retornado pela fun��o buscar rm $v0
 	
-	sb $0, 1($t0) #armazena 0 no endere�o respons�vel por registrar o numero de moradores atualmente no apartamento
-	sb $0, 2($t0) #armazena 0 no endere�o respons�vel por registrar o numero de carros atualmente no apartamento
-	sb $0, 3($t0) #armazena 0 no endere�o respons�vel por registrar o numero de motos atualmente no apartamento
-	sb $0, 4($t0) #armazena 0 no endere�o respons�vel por registrar o numero de veiculos atualmente no apartamento
+	sb $0, 1($t0) #carrega 0 no endere�o do numero de moradores no apartamento
+	sb $0, 2($t0) #carrega 0 no endere�o do numero de carrosno apartamento
+	sb $0, 3($t0) #carrega 0 no endere�o do numero de motos no apartamento
+	sb $0, 4($t0) #carrega 0 no endere�o do numero de veiculos no apartamento
 	
-	jr $ra
+	add $v1, $0, $0 #carrega o valor 0 em $v1 (não houve exceção)
+	
+	j finalizarLimpar
+	
+	erroAoLimpar:
+	addi $v1, $0, 1 #carrega o valor 1 em $v1 (exceção)
+	
+	finalizarLimpar:
+	jr $ra          #volta para a main
 
 
 formatar: #carrega no registrador $a0 o número de apartamentos da estrutura
 
 	sb $0, 0($s0)  #primeiro byte da estrutura indica quantos apartamentos estão atualmente ocupados
-	sb $a1, 1($s0) #segundo byte da estrutura indica o número de apartamentos existem
-	sb $0, 2($s0)  #terceiro byte é o endereço nulo da estrutura (exceção)
+	sb $a1, 1($s0) #segundo byte da estrutura indica o número de apartamentos existentes
 	
-	addi $t0, $s0, 3 #registra no registrador $t0 endere�o do primeiro apartamento
+	addi $t0, $s0, 2 #registra no registrador $t0 endere�o do primeiro apartamento
 	lb   $t1, 1($s0) #carrega em $t1 o número de apartamentos a serem inicializados
 	addi $t2, $0, 1  #carrega em $t2 o numero do primeiro apartamento
 	add  $t3, $0, $0 #registrador $t3 é auxiliar para o funcionamento da função
@@ -481,10 +878,88 @@ formatar: #carrega no registrador $a0 o número de apartamentos da estrutura
 main: #onde a chamada das opera��es e intera��o com o usuario ocorrem
 	lui $s0, 0x00001001
 	ori $s0, 0x00000190
+	
+	lui $s7, 0x00001001
+	ori $s7, 0x00000120
 
 	addi $a0, $s0, 0
 	addi $a1, $0, 1
 	jal formatar
+	
+	la $s1, tipo1
+	la $s2, modelo1
+	la $s3, cor1
+	
+		addi $a0, $0, 1
+		add $a1, $s1, $0
+		add $a2, $s2, $0
+		add $a3, $s3, $0
+		jal adicionarAutomovel
+		
+		beqz $v1, continuar10
+			add $a0, $s7, $0
+			la $a1, errado
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final10
+		continuar10:
+			add $a0, $s7, $0
+			la $a1, certo
+			addi $a2, $0, 10
+			jal strncpy
+			
+		final10:
+	
+	la $s1, tipo2
+	la $s2, modelo2
+	la $s3, cor2
+	
+		addi $a0, $0, 1
+		add $a1, $s1, $0
+		add $a2, $s2, $0
+		add $a3, $s3, $0
+		jal adicionarAutomovel
+		
+		beqz $v1, continuar11
+			add $a0, $s7, $0
+			la $a1, errado
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final11
+		continuar11:
+			add $a0, $s7, $0
+			la $a1, certo
+			addi $a2, $0, 10
+			jal strncpy
+			
+		final11:
+	
+	la $s1, tipo3
+	la $s2, modelo3
+	la $s3, cor3
+	
+		addi $a0, $0, 1
+		add $a1, $s1, $0
+		add $a2, $s2, $0
+		add $a3, $s3, $0
+		jal adicionarAutomovel
+		
+		beqz $v1, continuar12
+			add $a0, $s7, $0
+			la $a1, errado
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final12
+		continuar12:
+			add $a0, $s7, $0
+			la $a1, certo
+			addi $a2, $0, 10
+			jal strncpy
+			
+		final12:
 	
 	la $s1, nome1
 	la $s2, nome2
@@ -493,33 +968,160 @@ main: #onde a chamada das opera��es e intera��o com o usuario ocorrem
 	la $s5, nome5
 	la $s6, nome6
 	
+	addi $a0, $0, 3
+	add $a1, $s1, $0
+	jal adicionarMorador
+	
+		beqz $v1, continuar0
+			add $a0, $s7, $0
+			la $a1, errado
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final0
+		continuar0:
+			add $a0, $s7, $0
+			la $a1, certo
+			addi $a2, $0, 10
+			jal strncpy
+			
+		final0:
+	
 	addi $a0, $0, 1
 	add $a1, $s1, $0
 	jal adicionarMorador
+	
+		beqz $v1, continuar1
+			add $a0, $s7, $0
+			la $a1, errado
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final1
+		continuar1:
+			add $a0, $s7, $0
+			la $a1, certo
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final1
+		final1:
 	
 	addi $a0, $0, 1
 	add $a1, $s2, $0
 	jal adicionarMorador
 	
+		beqz $v1, continuar2
+			add $a0, $s7, $0
+			la $a1, errado
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final2
+		continuar2:
+			add $a0, $s7, $0
+			la $a1, certo
+			addi $a2, $0, 10
+			jal strncpy
+		
+		final2:
+		
+	addi $a0, $0, 1
+	add $a1, $s1, $0
+	jal removerMorador
+	
+	
+		beqz $v1, continuar7
+			add $a0, $s7, $0
+			la $a1, errado
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final7
+		continuar7:
+			add $a0, $s7, $0
+			la $a1, certo
+			addi $a2, $0, 10
+			jal strncpy
+		
+		final7:
+	
 	addi $a0, $0, 1
 	add $a1, $s3, $0
 	jal adicionarMorador
 	
+		beqz $v1, continuar3
+			add $a0, $s7, $0
+			la $a1, errado
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final3
+		continuar3:
+			add $a0, $s7, $0
+			la $a1, certo
+			addi $a2, $0, 10
+			jal strncpy
+		
+		final3:
+	
 	addi $a0, $0, 1
 	add $a1, $s4, $0
 	jal adicionarMorador
+	
+		beqz $v1, continuar4
+			add $a0, $s7, $0
+			la $a1, errado
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final4
+		continuar4:
+			add $a0, $s7, $0
+			la $a1, certo
+			addi $a2, $0, 10
+			jal strncpy
+		
+		final4:
 	
 	addi $a0, $0, 1
 	add $a1, $s5, $0
 	jal adicionarMorador
 	
+		beqz $v1, continuar5
+			add $a0, $s7, $0
+			la $a1, errado
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final5
+		continuar5:
+			add $a0, $s7, $0
+			la $a1, certo
+			addi $a2, $0, 10
+			jal strncpy
+		
+		final5:
+	
 	addi $a0, $0, 1
 	add $a1, $s6, $0
 	jal adicionarMorador
 	
-	addi $a0, $0, 1
-	add $a1, $s4, $0
-	jal removerMorador
+		beqz $v1, continuar6
+			add $a0, $s7, $0
+			la $a1, errado
+			addi $a2, $0, 10
+			jal strncpy
+		
+			j final6
+		continuar6:
+			add $a0, $s7, $0
+			la $a1, certo
+			addi $a2, $0, 10
+			jal strncpy
+		
+		final6:
+	
 	
 
 	addi $a0, $0, 3
